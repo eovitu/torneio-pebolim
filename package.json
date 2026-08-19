@@ -1,0 +1,25 @@
+{
+  "name": "torneio-pebolim",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Aplicativo de torneio de pebolim — frontend React, API Hono/PostgreSQL, monorepo.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,api -c blue,magenta \"npm run dev -w apps/web\" \"npm run dev -w apps/api\"",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "npm run dev -w apps/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
