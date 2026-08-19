@@ -71,9 +71,26 @@ export function statusAfterGoal(status: MatchStatus): MatchStatus {
 const ALLOWED_TRANSITIONS: Record<MatchStatus, readonly MatchStatus[]> = {
   SCHEDULED: ['LIVE'],
   LIVE: ['PAUSED', 'GOLDEN_GOAL', 'FINISHED'],
-  PAUSED: ['LIVE', 'FINISHED'],
+  // Retomar devolve a partida ao estado anterior à pausa: uma pausa durante o
+  // gol de ouro não pode rebaixar a partida para o tempo regulamentar.
+  PAUSED: ['LIVE', 'GOLDEN_GOAL', 'FINISHED'],
   GOLDEN_GOAL: ['PAUSED', 'FINISHED'],
   FINISHED: [],
+}
+
+/** Estados a partir dos quais pausar é permitido — e para os quais se retorna. */
+export type PausableStatus = 'LIVE' | 'GOLDEN_GOAL'
+
+/**
+ * Estado ao retomar uma partida pausada.
+ *
+ * A pausa é transparente: quem pausou durante o gol de ouro volta ao gol de
+ * ouro, e não ao tempo regulamentar — que já se esgotou e não pode recomeçar.
+ * Por isso o estado anterior à pausa precisa ser persistido (o banco guarda
+ * `status_antes_pausa`); ele não é derivável de `PAUSED` sozinho.
+ */
+export function statusAfterResume(statusBeforePause: PausableStatus): MatchStatus {
+  return statusBeforePause === 'GOLDEN_GOAL' ? 'GOLDEN_GOAL' : 'LIVE'
 }
 
 export function canTransition(from: MatchStatus, to: MatchStatus): boolean {

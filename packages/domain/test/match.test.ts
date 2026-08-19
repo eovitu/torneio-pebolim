@@ -7,6 +7,7 @@ import {
   requiresAdminToEdit,
   resultOf,
   statusAfterGoal,
+  statusAfterResume,
   statusAtRegulationEnd,
 } from '../src/match.js'
 import { goal, goals, resetSeq } from './helpers.js'
@@ -110,6 +111,18 @@ describe('estados da partida', () => {
 
   it('impede pular direto de agendada para encerrada', () => {
     expect(canTransition('SCHEDULED', 'FINISHED')).toBe(false)
+  })
+
+  it('retoma a pausa devolvendo a partida ao estado anterior', () => {
+    // Pausa no tempo regulamentar volta para LIVE.
+    expect(canTransition('LIVE', 'PAUSED')).toBe(true)
+    expect(statusAfterResume('LIVE')).toBe('LIVE')
+
+    // Pausa durante o gol de ouro volta para GOLDEN_GOAL — nunca para LIVE,
+    // porque o tempo regulamentar já se esgotou e não recomeça.
+    expect(canTransition('GOLDEN_GOAL', 'PAUSED')).toBe(true)
+    expect(statusAfterResume('GOLDEN_GOAL')).toBe('GOLDEN_GOAL')
+    expect(canTransition('PAUSED', 'GOLDEN_GOAL')).toBe(true)
   })
 
   it('exige administrador para editar partida encerrada', () => {
