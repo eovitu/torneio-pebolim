@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-bc4e4114-9416-4c5d-bc40-3506f0a2f60f/styles.css">
+<script src="_ds/modernist-bc4e4114-9416-4c5d-bc40-3506f0a2f60f/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800;900&display=swap">
+<style>
+html,body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+a{color:var(--color-accent)}a:hover{color:var(--color-accent-700)}
+button{font-family:var(--font-body)}
+input{font-family:var(--font-body)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+@keyframes flick{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;justify-content:center;background:var(--color-neutral-200)">
+<div style="width:100%;max-width:560px;min-height:100vh;background:var(--color-bg);border-left:2px solid var(--color-divider);border-right:2px solid var(--color-divider);position:relative;overflow:hidden">
+
+<sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
+<div style="padding:28px 20px 40px">
+  <div style="font:600 10px/1 var(--font-body);letter-spacing:.22em;text-transform:uppercase;color:var(--color-accent)">Pebolim · Torneio</div>
+  <h1 style="font-size:34px;margin:12px 0 6px;text-transform:uppercase;letter-spacing:-.03em">Monte seu torneio</h1>
+  <p style="margin:0 0 22px;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">Oito jogadores, quatro duplas, sorteio automático. O sistema cuida de tabela, desempates e mata-mata.</p>
+  <div style="height:2px;background:var(--color-divider);margin-bottom:20px"></div>
+
+  <sc-if value="{{ showFields }}" hint-placeholder-val="{{ true }}">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <sc-for list="{{ playerFields }}" as="f" hint-placeholder-count="8">
+      <label style="display:flex;flex-direction:column;gap:5px">
+        <span style="font:600 9px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 50%,transparent)">{{ f.label }}</span>
+        <input value="{{ f.value }}" onChange="{{ f.onChange }}" placeholder="{{ f.ph }}" style="height:48px;padding:0 12px;border:2px solid var(--color-divider);background:var(--color-neutral-100);font-size:15px;font-weight:600;color:var(--color-text);border-radius:0;outline:none">
+      </label>
+    </sc-for>
+  </div>
+  <button onClick="{{ onSorteio }}" style="margin-top:22px;width:100%;height:64px;border:0;background:var(--color-accent);color:var(--color-bg);font:800 17px/1 var(--font-heading);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:0 20px;cursor:pointer">Sortear equipes</button>
+  <p style="margin:10px 0 0;font-size:11px;color:color-mix(in srgb,var(--color-text) 50%,transparent)">Campos vazios recebem “Jogador N”.</p>
+  </sc-if>
+
+  <sc-if value="{{ drawing }}" hint-placeholder-val="{{ false }}">
+  <div style="animation:rise .3s ease both">
+    <div style="font:600 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--color-accent);animation:flick .6s infinite">Sorteando duplas</div>
+    <div style="margin-top:16px;display:grid;gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
+      <sc-for list="{{ shuffleNames }}" as="n" hint-placeholder-count="8">
+        <div style="background:var(--color-neutral-100);padding:12px 14px;font:800 16px/1 var(--font-heading);text-transform:uppercase">{{ n }}</div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ hasDraft }}" hint-placeholder-val="{{ false }}">
+  <div style="animation:rise .35s ease both">
+    <div style="font:600 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--color-accent)">Duplas sorteadas · personalize</div>
+    <div style="display:grid;gap:14px;margin-top:16px">
+      <sc-for list="{{ draftTeams }}" as="d" hint-placeholder-count="4">
+        <div style="border:2px solid var(--color-divider);padding:14px;animation:pop .35s ease both">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:34px;height:34px;background:var(--color-accent);color:var(--color-bg);font:800 15px/34px var(--font-heading);text-align:center">{{ d.code }}</div>
+            <input value="{{ d.name }}" onChange="{{ d.onName }}" style="flex:1;min-width:0;height:40px;padding:0 10px;border:2px solid var(--color-divider);background:var(--color-neutral-100);font:800 15px/1 var(--font-heading);text-transform:uppercase;color:var(--color-text);border-radius:0;outline:none">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <sc-for list="{{ d.players }}" as="p" hint-placeholder-count="2">
+              <input value="{{ p.name }}" onChange="{{ p.onName }}" style="height:42px;padding:0 10px;border:2px solid var(--color-divider);background:var(--color-bg);font-size:14px;font-weight:600;color:var(--color-text);border-radius:0;outline:none">
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:grid;gap:8px;margin-top:20px">
+      <button onClick="{{ onStart }}" style="width:100%;height:64px;border:0;background:var(--color-accent);color:var(--color-bg);font:800 17px/1 var(--font-heading);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:0 20px;cursor:pointer">Começar torneio</button>
+      <button onClick="{{ onSorteio }}" style="width:100%;height:48px;border:2px solid var(--color-divider);background:transparent;color:var(--color-text);font:600 12px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;text-align:left;padding:0 18px;cursor:pointer">Sortear novamente</button>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+<div style="padding-bottom:100px">
+
+  <div style="padding:20px 20px 14px;border-bottom:2px solid var(--color-divider)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div style="min-width:0">
+        <div style="font:600 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--color-accent)">{{ statusLabel }}</div>
+        <h1 style="font-size:25px;margin:9px 0 0;text-transform:uppercase;letter-spacing:-.025em">{{ title }}</h1>
+      </div>
+      <button onClick="{{ onAdmin }}" style="flex:none;height:34px;padding:0 12px;border:2px solid var(--color-divider);background:transparent;color:var(--color-text);font:600 10px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Adm</button>
+    </div>
+    <div style="margin-top:14px;display:flex;justify-content:space-between;font:600 10px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent)">
+      <span>{{ progressText }}</span><span>{{ progressCount }}</span>
+    </div>
+    <div style="margin-top:7px;height:6px;background:var(--color-neutral-300)">
+      <div style="height:6px;background:var(--color-accent);width:{{ progressPct }}%;transition:width .5s cubic-bezier(.2,.8,.2,1)"></div>
+    </div>
+  </div>
+
+  <sc-if value="{{ tabInicio }}" hint-placeholder-val="{{ true }}">
+  <div>
+    <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:22px 20px;border-bottom:2px solid var(--color-divider);background:var(--color-neutral-100)">
+      <div style="font:600 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--color-accent)">Próximo jogo · {{ next.label }}</div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:16px">
+        <div>
+          <div style="font:800 19px/1.05 var(--font-heading);text-transform:uppercase">{{ next.aName }}</div>
+          <div style="margin-top:5px;font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ next.aPlayers }}</div>
+        </div>
+        <div style="font:800 12px/1 var(--font-heading);letter-spacing:.1em;color:var(--color-accent)">VS</div>
+        <div style="text-align:right">
+          <div style="font:800 19px/1.05 var(--font-heading);text-transform:uppercase">{{ next.bName }}</div>
+          <div style="margin-top:5px;font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ next.bPlayers }}</div>
+        </div>
+      </div>
+      <button onClick="{{ onPlay }}" style="margin-top:18px;width:100%;height:58px;border:0;background:var(--color-accent);color:var(--color-bg);font:800 15px/1 var(--font-heading);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:0 18px;cursor:pointer">{{ playLabel }}</button>
+    </div>
+    </sc-if>
+
+    <div style="padding:20px;border-bottom:2px solid var(--color-divider)">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+          <div style="background:var(--color-bg);padding:14px">
+            <div style="font:800 30px/1 var(--font-heading)">{{ s.value }}</div>
+            <div style="margin-top:6px;font:600 9px/1.3 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ s.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="padding:20px 20px 8px">
+      <h2 style="font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px">Classificação</h2>
+      <div style="display:grid;gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
+        <sc-for list="{{ mini }}" as="r" hint-placeholder-count="4">
+          <button onClick="{{ r.onClick }}" style="background:{{ r.bg }};border:0;padding:12px 14px;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;width:100%">
+            <span style="font:800 15px/1 var(--font-heading);width:20px;color:{{ r.posColor }}">{{ r.pos }}</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:800 15px/1 var(--font-heading);text-transform:uppercase;color:var(--color-text)">{{ r.name }}</span>
+              <span style="display:block;margin-top:4px;font-size:10px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ r.players }}</span>
+            </span>
+            <span style="font:800 20px/1 var(--font-heading);color:var(--color-text)">{{ r.pts }}</span>
+            <span style="font:600 9px/1 var(--font-body);letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">PTS</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="padding:20px">
+      <h2 style="font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px">Últimos jogos</h2>
+      <sc-if value="{{ hasHistory }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;gap:10px">
+        <sc-for list="{{ recent }}" as="m" hint-placeholder-count="3">
+          <div style="border:2px solid var(--color-divider);padding:12px 14px;animation:rise .3s ease both">
+            <div style="font:600 9px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 50%,transparent)">{{ m.label }}</div>
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:10px">
+              <div style="font:800 14px/1.1 var(--font-heading);text-transform:uppercase;color:{{ m.aColor }}">{{ m.aName }}</div>
+              <div style="font:800 22px/1 var(--font-heading);letter-spacing:.04em">{{ m.score }}</div>
+              <div style="text-align:right;font:800 14px/1.1 var(--font-heading);text-transform:uppercase;color:{{ m.bColor }}">{{ m.bName }}</div>
+            </div>
+            <div style="margin-top:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent-700)">{{ m.keeperNote }}</div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      <sc-if value="{{ noHistory }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0;font-size:13px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">Nenhuma partida registrada ainda.</p>
+      </sc-if>
+    </div>
+
+    <div style="padding:0 20px 26px">
+      <h2 style="font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px">Artilharia</h2>
+      <div style="display:grid;gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
+        <sc-for list="{{ scorers }}" as="s" hint-placeholder-count="4">
+          <div style="background:var(--color-bg);padding:11px 14px;display:flex;align-items:center;gap:12px">
+            <span style="font:800 13px/1 var(--font-heading);width:18px;color:var(--color-accent)">{{ s.pos }}</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:800 14px/1 var(--font-heading);text-transform:uppercase">{{ s.name }}</span>
+              <span style="display:block;margin-top:3px;font-size:10px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ s.team }} · {{ s.keeper }} de goleiro</span>
+            </span>
+            <span style="font:800 18px/1 var(--font-heading)">{{ s.goals }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ tabPartidas }}" hint-placeholder-val="{{ false }}">
+  <div>
+    <sc-if value="{{ liveOpen }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="padding:16px 20px;border-bottom:2px solid var(--color-divider);background:var(--color-accent);color:var(--color-bg)">
+        <div style="font:600 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase">Partida em andamento</div>
+        <div style="margin-top:6px;font:800 16px/1.1 var(--font-heading);text-transform:uppercase">{{ live.label }}</div>
+      </div>
+      <sc-for list="{{ live.sides }}" as="s" hint-placeholder-count="2">
+        <div style="padding:18px 20px;border-bottom:2px solid var(--color-divider);background:{{ s.bg }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+            <div style="min-width:0">
+              <div style="font:800 19px/1.05 var(--font-heading);text-transform:uppercase">{{ s.name }}</div>
+              <div style="margin-top:5px;font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ s.players }}</div>
+            </div>
+            <div style="font:900 62px/1 var(--font-heading);letter-spacing:-.04em">{{ s.score }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+            <sc-for list="{{ s.buttons }}" as="b" hint-placeholder-count="4">
+              <button onClick="{{ b.onClick }}" style="height:56px;border:2px solid {{ b.border }};background:{{ b.bg }};color:{{ b.fg }};cursor:pointer;text-align:left;padding:0 12px;display:flex;flex-direction:column;justify-content:center;gap:3px">
+                <span style="font:800 13px/1 var(--font-heading);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">{{ b.label }}</span>
+                <span style="font:600 9px/1 var(--font-body);letter-spacing:.12em;text-transform:uppercase;opacity:.75">{{ b.sub }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="margin-top:10px;font:600 10px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700)">Gols de goleiro: {{ s.keeper }}</div>
+        </div>
+      </sc-for>
+      <div style="padding:18px 20px">
+        <sc-if value="{{ canFinish }}" hint-placeholder-val="{{ false }}">
+        <div style="border:2px solid var(--color-accent);padding:14px;margin-bottom:12px;animation:pop .3s ease both">
+          <div style="font:600 10px/1 var(--font-body);letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent)">Confirmar resultado</div>
+          <div style="margin-top:10px;font:800 20px/1.2 var(--font-heading);text-transform:uppercase">{{ confirmLine }}</div>
+          <div style="margin-top:6px;font-size:11px;color:color-mix(in srgb,var(--color-text) 60%,transparent)">{{ confirmKeeper }}</div>
+          <button onClick="{{ onFinish }}" style="margin-top:14px;width:100%;height:58px;border:0;background:var(--color-accent);color:var(--color-bg);font:800 15px/1 var(--font-heading);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:0 16px;cursor:pointer">Confirmar resultado</button>
+        </div>
+        </sc-if>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onClick="{{ onUndo }}" style="height:46px;border:2px solid var(--color-divider);background:transparent;color:var(--color-text);font:600 11px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;text-align:left;padding:0 14px;cursor:pointer">Desfazer gol</button>
+          <button onClick="{{ onCancelLive }}" style="height:46px;border:2px solid var(--color-divider);background:transparent;color:var(--color-text);font:600 11px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;text-align:left;padding:0 14px;cursor:pointer">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ showNextPanel }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:22px 20px;border-bottom:2px solid var(--color-divider);background:var(--color-neutral-100)">
+      <div style="font:600 10px/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--color-accent)">Próximo jogo · {{ next.label }}</div>
+      <div style="margin-top:14px;font:800 22px/1.15 var(--font-heading);text-transform:uppercase">{{ next.aName }}<br><span style="color:var(--color-accent);font-size:14px">vs</span><br>{{ next.bName }}</div>
+      <button onClick="{{ onPlay }}" style="margin-top:18px;width:100%;height:58px;border:0;background:var(--color-accent);color:var(--color-bg);font:800 15px/1 var(--font-heading);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:0 18px;cursor:pointer">Registrar partida</button>
+    </div>
+    </sc-if>
+
+    <div style="padding:20px">
+      <h2 style="font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 14px">Histórico</h2>
+      <div style="display:grid;gap:2px;background:var(--color-divider);border:2px solid var(--color-divider)">
+        <sc-for list="{{ timeline }}" as="m" hint-placeholder-count="8">
+          <div style="background:{{ m.bg }};padding:12px 14px;display:flex;align-items:center;gap:12px">
+            <span style="font:800 12px/1 var(--font-heading);width:26px;color:{{ m.numColor }}">{{ m.num }}</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:800 13px/1.15 var(--font-heading);text-transform:uppercase">{{ m.pair }}</span>
+              <span style="display:block;margin-top:3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 50%,transparent)">{{ m.label }}</span>
+            </span>
+            <span style="font:800 15px/1 var(--font-heading);color:{{ m.numColor }}">{{ m.score }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ tabTabela }}" hint-placeholder-val="{{ false }}">
+  <div style="padding:20px">
+    <h2 style="font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 6px">Classificação</h2>
+    <p style="margin:0 0 16px;font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">Desempate: pontos › gols feitos › gols de goleiro › pontuação de gols (gol {{ goalOne }}, goleiro {{ goalKeeper }}).</p>
+    <div style="display:grid;gap:12px">
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+        <div style="border:2px solid {{ r.border }};background:{{ r.bg }};animation:rise .3s ease both">
+          <button onClick="{{ r.onClick }}" style="width:100%;background:transparent;border:0;padding:14px;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer">
+            <span style="font:900 22px/1 var(--font-heading);width:26px;color:{{ r.posColor }}">{{ r.pos }}</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font:800 17px/1 var(--font-heading);text-transform:uppercase;color:var(--color-text)">{{ r.name }}</span>
+              <span style="display:block;margin-top:4px;font-size:10px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ r.players }}</span>
+            </span>
+            <span style="text-align:right">
+              <span style="display:block;font:900 24px/1 var(--font-heading);color:var(--color-text)">{{ r.pts }}</span>
+              <span style="display:block;font:600 9px/1 var(--font-body);letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">PTS</span>
+            </span>
+          </button>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--color-divider);border-top:2px solid var(--color-divider)">
+            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="8">
+              <div style="background:var(--color-bg);padding:8px 6px;text-align:center">
+                <div style="font:800 15px/1 var(--font-heading)">{{ c.v }}</div>
+                <div style="margin-top:4px;font:600 8px/1 var(--font-body);letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">{{ c.k }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ tabEquipes }}" hint-placeholder-val="{{ false }}">
+  <div style="padding:20px">
+    <h2 style="font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 16px">Equipes</h2>
+    <div style="display:grid;gap:14px">
+      <sc-for list="{{ teamCards }}" as="t" hint-placeholder-count="4">
+        <div style="border:2px solid var(--color-divider);padding:14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:34px;height:34px;background:var(--color-accent);color:var(--color-bg);font:800 15px/34px var(--font-heading);text-align:center">{{ t.code }}</div>
+            <input value="{{ t.name }}" onChange="{{ t.onName }}" style="flex:1;min-width:0;height:40px;padding:0 10px;border:2px solid var(--color-divider);background:var(--color-neutral-100);font:800 15px/1 var(--font-heading);text-transform:uppercase;color:var(--color-text);border-radius:0;outline:none">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <sc-for list="{{ t.players }}" as="p" hint-placeholder-count="2">
+              <input value="{{ p.name }}" onChange="{{ p.onName }}" style="height:42px;padding:0 10px;border:2px solid var(--color-divider);background:var(--color-bg);font-size:14px;font-weight:600;color:var(--color-text);border-radius:0;outline:none">
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--color-divider);border:2px solid var(--color-divider);margin-top:12px">
+            <sc-for list="{{ t.cells }}" as="c" hint-placeholder-count="4">
+              <div style="background:var(--color-bg);padding:8px 6px;text-align:center">
+                <div style="font:800 15px/1 var(--font-heading)">{{ c.v }}</div>
+                <div style="margin-top:4px;font:600 8px/1 var(--font-body);letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">{{ c.k }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:12px;display:grid;gap:6px">
+            <sc-for list="{{ t.history }}" as="h" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px;font-size:12px">
+                <span style="width:18px;font:800 12px/1 var(--font-heading);color:{{ h.color }}">{{ h.res }}</span>
+                <span style="flex:1;min-width:0;text-transform:uppercase;font-weight:600">{{ h.opp }}</span>
+                <span style="font:800 13px/1 var(--font-heading)">{{ h.score }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ tabMata }}" hint-placeholder-val="{{ false }}">
+  <div style="padding:20px">
+    <h2 style="font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 6px">Mata-mata</h2>
+    <p style="margin:0 0 18px;font-size:11px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ koNote }}</p>
+
+    <sc-if value="{{ hasChampion }}" hint-placeholder-val="{{ false }}">
+    <div style="border:2px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);padding:22px;margin-bottom:18px;animation:pop .5s ease both">
+      <div style="font:800 42px/1 var(--font-heading)">🏆</div>
+      <div style="margin-top:12px;font:600 10px/1 var(--font-body);letter-spacing:.24em;text-transform:uppercase">Campeão</div>
+      <div style="margin-top:8px;font:900 34px/1 var(--font-heading);text-transform:uppercase;letter-spacing:-.03em">{{ champion.name }}</div>
+      <div style="margin-top:8px;font-size:13px;opacity:.85">{{ champion.players }}</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:rgba(255,255,255,.35);margin-top:18px">
+        <sc-for list="{{ champion.stats }}" as="c" hint-placeholder-count="5">
+          <div style="background:var(--color-accent);padding:10px 8px">
+            <div style="font:800 22px/1 var(--font-heading)">{{ c.v }}</div>
+            <div style="margin-top:4px;font:600 8px/1.2 var(--font-body);letter-spacing:.12em;text-transform:uppercase;opacity:.85">{{ c.k }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="display:grid;gap:12px">
+      <sc-for list="{{ bracket }}" as="b" hint-placeholder-count="3">
+        <div style="border:2px solid {{ b.border }};padding:14px">
+          <div style="font:600 10px/1 var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:{{ b.labelColor }}">{{ b.label }}</div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:12px">
+            <div style="font:800 16px/1.1 var(--font-heading);text-transform:uppercase;color:{{ b.aColor }}">{{ b.aName }}</div>
+            <div style="font:800 20px/1 var(--font-heading)">{{ b.score }}</div>
+            <div style="text-align:right;font:800 16px/1.1 var(--font-heading);text-transform:uppercase;color:{{ b.bColor }}">{{ b.bName }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:color-mix(in srgb,#201e1d 55%,transparent);display:flex;align-items:flex-end;justify-content:center;z-index:40">
+    <div style="width:100%;max-width:560px;background:var(--color-bg);border-top:2px solid var(--color-divider);max-height:86vh;overflow:auto;animation:rise .25s ease both">
+      <div style="padding:18px 20px;border-bottom:2px solid var(--color-divider);display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="min-width:0">
+          <div style="font:800 24px/1.05 var(--font-heading);text-transform:uppercase">{{ detail.name }}</div>
+          <div style="margin-top:6px;font-size:12px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">{{ detail.players }}</div>
+        </div>
+        <button onClick="{{ onCloseDetail }}" style="flex:none;height:34px;padding:0 12px;border:2px solid var(--color-divider);background:transparent;color:var(--color-text);font:600 10px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Fechar</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--color-divider)">
+        <sc-for list="{{ detail.cells }}" as="c" hint-placeholder-count="8">
+          <div style="background:var(--color-bg);padding:12px 6px;text-align:center">
+            <div style="font:800 18px/1 var(--font-heading)">{{ c.v }}</div>
+            <div style="margin-top:4px;font:600 8px/1 var(--font-body);letter-spacing:.1em;color:color-mix(in srgb,var(--color-text) 50%,transparent)">{{ c.k }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:18px 20px 28px;display:grid;gap:8px">
+        <sc-for list="{{ detail.history }}" as="h" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--color-neutral-300)">
+            <span style="width:20px;font:800 13px/1 var(--font-heading);color:{{ h.color }}">{{ h.res }}</span>
+            <span style="flex:1;min-width:0;font-size:12px;font-weight:600;text-transform:uppercase">{{ h.opp }}</span>
+            <span style="font:800 14px/1 var(--font-heading)">{{ h.score }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ adminOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:color-mix(in srgb,#201e1d 55%,transparent);display:flex;align-items:flex-end;justify-content:center;z-index:50">
+    <div style="width:100%;max-width:560px;background:var(--color-bg);border-top:2px solid var(--color-divider);animation:rise .25s ease both">
+      <div style="padding:18px 20px;border-bottom:2px solid var(--color-divider);display:flex;justify-content:space-between;align-items:center">
+        <div style="font:800 18px/1 var(--font-heading);text-transform:uppercase">Administração</div>
+        <button onClick="{{ onAdmin }}" style="height:34px;padding:0 12px;border:2px solid var(--color-divider);background:transparent;color:var(--color-text);font:600 10px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;cursor:pointer">Fechar</button>
+      </div>
+      <div style="padding:18px 20px 26px;display:grid;gap:8px">
+        <p style="margin:0 0 6px;font-size:12px;color:color-mix(in srgb,var(--color-text) 55%,transparent)">Nomes de equipes e jogadores são editados na aba EQUIPES. A classificação é sempre recalculada a partir das partidas.</p>
+        <button onClick="{{ onDeleteLast }}" style="height:52px;border:2px solid var(--color-divider);background:transparent;color:var(--color-text);font:600 12px/1 var(--font-body);letter-spacing:.14em;text-transform:uppercase;text-align:left;padding:0 16px;cursor:pointer">Excluir última partida</button>
+        <button onClick="{{ onReset }}" style="height:52px;border:2px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);font:800 12px/1 var(--font-heading);letter-spacing:.14em;text-transform:uppercase;text-align:left;padding:0 16px;cursor:pointer">Reiniciar campeonato</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;z-index:30;pointer-events:none">
+    <div style="width:100%;max-width:560px;background:var(--color-bg);border-top:2px solid var(--color-divider);display:grid;grid-template-columns:repeat(5,1fr);pointer-events:auto">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.onClick }}" style="border:0;border-top:4px solid {{ n.bar }};background:transparent;height:66px;padding:0 2px;cursor:pointer;font:600 9px/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:{{ n.color }}">{{ n.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:932},&quot;tournamentName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;TORNEIO DE PEBOLIM 2026&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;goalsToWin&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:3,&quot;max&quot;:10,&quot;tsType&quot;:&quot;number&quot;},&quot;keeperGoalWeight&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2,&quot;min&quot;:1,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Regras&quot;}}">
+const KEY = 'pebolim.v1';
+const shuffle = a => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = r[i]; r[i] = r[j]; r[j] = x; } return r; };
+const MUT = 'color-mix(in srgb, var(--color-text) 50%, transparent)';
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = Object.assign(this.blank(), this.load());
+  }
+  blank() {
+    return { t: null, names: ['', '', '', '', '', '', '', ''], draft: null, drawing: false, shuffleNames: null, tab: 'inicio', live: null, selTeam: null, admin: false };
+  }
+  load() {
+    try { const raw = localStorage.getItem(KEY); if (!raw) return {}; const s = JSON.parse(raw); return { t: s.t || null, live: s.live || null, tab: s.tab || 'inicio' }; }
+    catch (e) { return {}; }
+  }
+  persist(st) { try { localStorage.setItem(KEY, JSON.stringify({ t: st.t, live: st.live, tab: st.tab })); } catch (e) {} }
+  set(patch) { this.setState(patch, () => this.persist(this.state)); }
+  componentWillUnmount() { clearInterval(this._iv); }
+
+  get gw() { return Number(this.props.goalsToWin) || 5; }
+  get kw() { return Number(this.props.keeperGoalWeight) || 2; }
+
+  /* ---------- setup ---------- */
+  sortear() {
+    const names = this.state.names.map((n, i) => (n || '').trim() || ('Jogador ' + (i + 1)));
+    clearInterval(this._iv);
+    this.setState({ drawing: true, draft: null, shuffleNames: shuffle(names) });
+    let ticks = 0;
+    this._iv = setInterval(() => {
+      ticks++;
+      if (ticks < 11) { this.setState({ shuffleNames: shuffle(names) }); return; }
+      clearInterval(this._iv);
+      const sh = shuffle(names);
+      const players = sh.map((n, i) => ({ id: 'p' + (i + 1), name: n }));
+      const teams = [0, 1, 2, 3].map(k => ({
+        id: 't' + (k + 1), code: String(k + 1).padStart(2, '0'),
+        name: 'EQUIPE ' + String(k + 1).padStart(2, '0'),
+        playerIds: [players[k * 2].id, players[k * 2 + 1].id]
+      }));
+      this.setState({ drawing: false, shuffleNames: null, draft: { players, teams } });
+    }, 95);
+  }
+  start() {
+    const d = this.state.draft; if (!d) return;
+    this.set({
+      t: { id: 'tour-' + Date.now(), name: this.props.tournamentName || 'TORNEIO DE PEBOLIM 2026', createdAt: Date.now(), players: d.players, teams: d.teams, matches: [] },
+      draft: null, tab: 'inicio'
+    });
+  }
+
+  /* ---------- model helpers ---------- */
+  team(id) { return (this.state.t.teams || []).find(x => x.id === id); }
+  tname(id) { const t = this.team(id); return t ? t.name : '—'; }
+  tplayers(id) { const t = this.team(id); return t ? t.playerIds.map(p => this.pname(p)).join(' + ') : ''; }
+  pname(id) { const p = this.state.t.players.find(x => x.id === id); return p ? p.name : ''; }
+  groupMatches() { return this.state.t.matches.filter(m => m.phase === 'group'); }
+  koMatches() { return this.state.t.matches.filter(m => m.phase !== 'group'); }
+  goals(m, tid) { return m.scorers.filter(s => s.teamId === tid).length; }
+  keeperGoals(m, tid) { return m.scorers.filter(s => s.teamId === tid && s.keeper).length; }
+  goalScore(m, tid) { return this.goals(m, tid) + this.keeperGoals(m, tid) * (this.kw - 1); }
+  winner(m) {
+    const a = this.goals(m, m.teamA), b = this.goals(m, m.teamB);
+    if (a !== b) return a > b ? m.teamA : m.teamB;
+    return this.goalScore(m, m.teamB) > this.goalScore(m, m.teamA) ? m.teamB : m.teamA;
+  }
+  loser(m) { return this.winner(m) === m.teamA ? m.teamB : m.teamA; }
+
+  statsFor(tid, list) {
+    const s = { j: 0, v: 0, e: 0, d: 0, gf: 0, ga: 0, gg: 0, pts: 0 };
+    list.forEach(m => {
+      if (m.teamA !== tid && m.teamB !== tid) return;
+      const own = tid, opp = m.teamA === tid ? m.teamB : m.teamA;
+      const gf = this.goals(m, own), ga = this.goals(m, opp);
+      s.j++; s.gf += gf; s.ga += ga; s.gg += this.keeperGoals(m, own);
+      if (gf > ga) { s.v++; s.pts += 3; } else if (gf === ga) { s.e++; s.pts += 1; } else s.d++;
+    });
+    s.sg = s.gf - s.ga;
+    s.pg = s.gf + s.gg * (this.kw - 1);
+    return s;
+  }
+  standings() {
+    const g = this.groupMatches();
+    return this.state.t.teams.map(t => Object.assign({ id: t.id, name: t.name, players: this.tplayers(t.id) }, this.statsFor(t.id, g)))
+      .sort((a, b) => b.pts - a.pts || b.gf - a.gf || b.gg - a.gg || b.pg - a.pg || a.name.localeCompare(b.name));
+  }
+
+  nextFixture() {
+    const t = this.state.t; if (!t) return null;
+    const g = this.groupMatches(), n = g.length, ids = t.teams.map(x => x.id);
+    const fx = (phase, label, a, b) => ({ phase: phase, label: label, teamA: a, teamB: b });
+    if (n < 8) {
+      if (n === 0) return fx('group', 'GRUPO · JOGO 1', ids[0], ids[1]);
+      if (n === 1) return fx('group', 'GRUPO · JOGO 2', ids[2], ids[3]);
+      if (n === 2) return fx('group', 'CHAVE DOS VENCEDORES', this.winner(g[0]), this.winner(g[1]));
+      if (n === 3) return fx('group', 'CHAVE DOS PERDEDORES', this.loser(g[0]), this.loser(g[1]));
+      if (n === 4 || n === 5) {
+        const played = {};
+        g.forEach(m => { played[[m.teamA, m.teamB].sort().join('-')] = 1; });
+        const rem = [];
+        for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) {
+          const k = [ids[i], ids[j]].sort().join('-');
+          if (!played[k]) rem.push([ids[i], ids[j]]);
+        }
+        const p = rem[0] || [ids[0], ids[2]];
+        return fx('group', 'RODADA CRUZADA · JOGO ' + (n + 1), p[0], p[1]);
+      }
+      const s = this.standings();
+      if (n === 6) return fx('group', 'DECISÃO DA PONTA · 1º x 2º', s[0].id, s[1].id);
+      return fx('group', 'DECISÃO · 3º x 4º', s[2].id, s[3].id);
+    }
+    const s = this.standings(), ko = this.koMatches();
+    const semis = ko.filter(m => m.phase === 'semi');
+    if (semis.length === 0) return fx('semi', 'SEMIFINAL 1 · 1º x 4º', s[0].id, s[3].id);
+    if (semis.length === 1) return fx('semi', 'SEMIFINAL 2 · 2º x 3º', s[1].id, s[2].id);
+    if (!ko.some(m => m.phase === 'final')) return fx('final', 'FINAL', this.winner(semis[0]), this.winner(semis[1]));
+    return null;
+  }
+  finalMatch() { return this.state.t.matches.find(m => m.phase === 'final'); }
+
+  /* ---------- match registration ---------- */
+  startLive() {
+    const f = this.nextFixture(); if (!f) return;
+    this.set({ live: { fixture: f, scorers: [] }, tab: 'partidas' });
+  }
+  addGoal(teamId, playerId, keeper) {
+    const l = this.state.live; if (!l) return;
+    if (this.goals({ scorers: l.scorers, teamA: 0, teamB: 0 }, teamId) >= this.gw) return;
+    this.set({ live: { fixture: l.fixture, scorers: l.scorers.concat([{ teamId: teamId, playerId: playerId, keeper: !!keeper }]) } });
+  }
+  undo() {
+    const l = this.state.live; if (!l || !l.scorers.length) return;
+    this.set({ live: { fixture: l.fixture, scorers: l.scorers.slice(0, -1) } });
+  }
+  finish() {
+    const l = this.state.live; if (!l) return;
+    const m = { id: 'm' + Date.now(), phase: l.fixture.phase, label: l.fixture.label, teamA: l.fixture.teamA, teamB: l.fixture.teamB, scorers: l.scorers, ts: Date.now() };
+    const t = Object.assign({}, this.state.t, { matches: this.state.t.matches.concat([m]) });
+    const tab = m.phase === 'group' ? 'inicio' : 'mata';
+    this.set({ t: t, live: null, tab: tab });
+  }
+  deleteLast() {
+    const ms = this.state.t.matches.slice(0, -1);
+    this.set({ t: Object.assign({}, this.state.t, { matches: ms }), live: null, admin: false });
+  }
+  reset() { try { localStorage.removeItem(KEY); } catch (e) {} clearInterval(this._iv); this.setState(this.blank()); }
+  renameTeam(id, v) {
+    const teams = this.state.t.teams.map(t => t.id === id ? Object.assign({}, t, { name: v.toUpperCase() }) : t);
+    this.set({ t: Object.assign({}, this.state.t, { teams: teams }) });
+  }
+  renamePlayer(id, v) {
+    const players = this.state.t.players.map(p => p.id === id ? Object.assign({}, p, { name: v }) : p);
+    this.set({ t: Object.assign({}, this.state.t, { players: players }) });
+  }
+
+  /* ---------- render values ---------- */
+  renderVals() {
+    const st = this.state;
+    if (!st.t) return this.setupVals();
+    const t = st.t, gm = this.groupMatches(), ko = this.koMatches();
+    const s = this.standings(), next = this.nextFixture(), fin = this.finalMatch();
+    const champId = fin ? this.winner(fin) : null;
+    const inGroup = gm.length < 8;
+    const total = 8 + 3;
+    const played = t.matches.length;
+
+    const nav = [['inicio', 'Início'], ['partidas', 'Partidas'], ['tabela', 'Tabela'], ['equipes', 'Equipes'], ['mata', 'Mata-mata']].map(n => ({
+      label: n[1], onClick: () => this.set({ tab: n[0], selTeam: null }),
+      color: st.tab === n[0] ? 'var(--color-accent)' : MUT,
+      bar: st.tab === n[0] ? 'var(--color-accent)' : 'transparent'
+    }));
+
+    const nextVals = next ? {
+      label: next.label, aName: this.tname(next.teamA), bName: this.tname(next.teamB),
+      aPlayers: this.tplayers(next.teamA), bPlayers: this.tplayers(next.teamB)
+    } : { label: '', aName: '', bName: '', aPlayers: '', bPlayers: '' };
+
+    const matchRow = m => {
+      const a = this.goals(m, m.teamA), b = this.goals(m, m.teamB), w = this.winner(m);
+      const ka = this.keeperGoals(m, m.teamA), kb = this.keeperGoals(m, m.teamB);
+      return {
+        label: m.label, aName: this.tname(m.teamA), bName: this.tname(m.teamB), score: a + ' — ' + b,
+        aColor: w === m.teamA ? 'var(--color-accent)' : 'var(--color-text)',
+        bColor: w === m.teamB ? 'var(--color-accent)' : 'var(--color-text)',
+        keeperNote: 'Goleiro · ' + this.tname(m.teamA) + ' ' + ka + ' / ' + this.tname(m.teamB) + ' ' + kb
+      };
+    };
+
+    const scoreMap = {};
+    t.matches.forEach(m => m.scorers.forEach(sc => {
+      const k = sc.playerId; if (!scoreMap[k]) scoreMap[k] = { goals: 0, keeper: 0, teamId: sc.teamId };
+      scoreMap[k].goals++; if (sc.keeper) scoreMap[k].keeper++;
+    }));
+    const scorers = t.players.map(p => {
+      const d = scoreMap[p.id] || { goals: 0, keeper: 0, teamId: null };
+      const tm = t.teams.find(x => x.playerIds.indexOf(p.id) >= 0);
+      return { name: p.name, goals: d.goals, keeper: d.keeper, team: tm ? tm.name : '' };
+    }).sort((a, b) => b.goals - a.goals || b.keeper - a.keeper || a.name.localeCompare(b.name))
+      .slice(0, 5).map((x, i) => Object.assign({ pos: i + 1 }, x));
+
+    const totalGoals = t.matches.reduce((n, m) => n + m.scorers.length, 0);
+    const totalKeeper = t.matches.reduce((n, m) => n + m.scorers.filter(x => x.keeper).length, 0);
+
+    const cellsFor = r => [{ k: 'J', v: r.j }, { k: 'V', v: r.v }, { k: 'E', v: r.e }, { k: 'D', v: r.d }, { k: 'GF', v: r.gf }, { k: 'GG', v: r.gg }, { k: 'SG', v: (r.sg > 0 ? '+' : '') + r.sg }, { k: 'PG', v: r.pg }];
+
+    const historyFor = tid => t.matches.filter(m => m.teamA === tid || m.teamB === tid).slice().reverse().map(m => {
+      const opp = m.teamA === tid ? m.teamB : m.teamA;
+      const gf = this.goals(m, tid), ga = this.goals(m, opp);
+      const res = gf > ga ? 'V' : gf === ga ? 'E' : 'D';
+      return { res: res, opp: 'vs ' + this.tname(opp), score: gf + '×' + ga, color: res === 'V' ? 'var(--color-accent)' : res === 'E' ? MUT : 'var(--color-neutral-600)' };
+    });
+
+    const live = st.live ? {
+      label: st.live.fixture.label,
+      sides: [st.live.fixture.teamA, st.live.fixture.teamB].map((tid, idx) => {
+        const tm = this.team(tid);
+        const fake = { scorers: st.live.scorers, teamA: 0, teamB: 0 };
+        const sc = this.goals(fake, tid);
+        const buttons = [];
+        tm.playerIds.forEach(pid => {
+          buttons.push({ label: this.pname(pid), sub: '+ Gol', onClick: () => this.addGoal(tid, pid, false), bg: 'var(--color-neutral-100)', fg: 'var(--color-text)', border: 'var(--color-divider)' });
+          buttons.push({ label: this.pname(pid), sub: '+ Goleiro', onClick: () => this.addGoal(tid, pid, true), bg: 'var(--color-accent-200)', fg: 'var(--color-accent-800)', border: 'var(--color-accent)' });
+        });
+        return { name: tm.name, players: this.tplayers(tid), score: sc, keeper: this.keeperGoals(fake, tid), buttons: buttons, bg: idx === 0 ? 'var(--color-bg)' : 'var(--color-neutral-100)' };
+      })
+    } : null;
+    let canFinish = false, confirmLine = '', confirmKeeper = '';
+    if (st.live) {
+      const f = { scorers: st.live.scorers, teamA: 0, teamB: 0 };
+      const a = this.goals(f, st.live.fixture.teamA), b = this.goals(f, st.live.fixture.teamB);
+      canFinish = a >= this.gw || b >= this.gw;
+      confirmLine = this.tname(st.live.fixture.teamA) + ' ' + a + ' × ' + b + ' ' + this.tname(st.live.fixture.teamB);
+      confirmKeeper = 'Gols de goleiro — ' + this.tname(st.live.fixture.teamA) + ': ' + this.keeperGoals(f, st.live.fixture.teamA) + ' · ' + this.tname(st.live.fixture.teamB) + ': ' + this.keeperGoals(f, st.live.fixture.teamB);
+    }
+
+    const bracket = [];
+    const semis = ko.filter(m => m.phase === 'semi');
+    const semiLabels = ['SEMIFINAL 1 · 1º x 4º', 'SEMIFINAL 2 · 2º x 3º'];
+    for (let i = 0; i < 2; i++) {
+      const m = semis[i];
+      if (m) {
+        const r = matchRow(m);
+        bracket.push({ label: semiLabels[i], aName: r.aName, bName: r.bName, score: r.score, aColor: r.aColor, bColor: r.bColor, border: 'var(--color-divider)', labelColor: MUT });
+      } else {
+        const pending = next && next.phase === 'semi' && semis.length === i;
+        bracket.push({
+          label: semiLabels[i], score: 'vs',
+          aName: inGroup ? (i === 0 ? '1º colocado' : '2º colocado') : (pending ? this.tname(next.teamA) : (i === 0 ? s[0].name : s[1].name)),
+          bName: inGroup ? (i === 0 ? '4º colocado' : '3º colocado') : (pending ? this.tname(next.teamB) : (i === 0 ? s[3].name : s[2].name)),
+          aColor: 'var(--color-text)', bColor: 'var(--color-text)',
+          border: pending ? 'var(--color-accent)' : 'var(--color-divider)', labelColor: pending ? 'var(--color-accent)' : MUT
+        });
+      }
+    }
+    if (fin) { const r = matchRow(fin); bracket.push({ label: '🏆 FINAL', aName: r.aName, bName: r.bName, score: r.score, aColor: r.aColor, bColor: r.bColor, border: 'var(--color-accent)', labelColor: 'var(--color-accent)' }); }
+    else bracket.push({
+      label: '🏆 FINAL', score: 'vs',
+      aName: semis[0] ? this.tname(this.winner(semis[0])) : 'Vencedor Semi 1',
+      bName: semis[1] ? this.tname(this.winner(semis[1])) : 'Vencedor Semi 2',
+      aColor: 'var(--color-text)', bColor: 'var(--color-text)',
+      border: next && next.phase === 'final' ? 'var(--color-accent)' : 'var(--color-divider)',
+      labelColor: next && next.phase === 'final' ? 'var(--color-accent)' : MUT
+    });
+
+    let champion = null;
+    if (champId) {
+      const all = this.statsFor(champId, t.matches);
+      champion = {
+        name: this.tname(champId), players: this.tplayers(champId),
+        stats: [{ k: 'Partidas', v: all.j }, { k: 'Vitórias', v: all.v }, { k: 'Gols', v: all.gf }, { k: 'Gols de goleiro', v: all.gg }, { k: 'Aproveitamento', v: (all.j ? Math.round(all.pts / (all.j * 3) * 100) : 0) + '%' }]
+      };
+    }
+
+    const detailTeam = st.selTeam ? s.find(x => x.id === st.selTeam) : null;
+
+    return {
+      isSetup: false, isApp: true, showFields: false, drawing: false, hasDraft: false,
+      playerFields: [], draftTeams: [], shuffleNames: [], onSorteio: () => {}, onStart: () => {},
+      title: t.name,
+      statusLabel: champId ? '🏆 Finalizado' : (inGroup ? '🟢 Fase de grupos' : '🟢 Mata-mata'),
+      progressText: champId ? 'Torneio encerrado' : (inGroup ? 'Fase de grupos' : 'Fase eliminatória'),
+      progressCount: played + '/' + total + ' partidas',
+      progressPct: Math.round(played / total * 100),
+      nav: nav,
+      tabInicio: st.tab === 'inicio', tabPartidas: st.tab === 'partidas', tabTabela: st.tab === 'tabela', tabEquipes: st.tab === 'equipes', tabMata: st.tab === 'mata',
+      hasNext: !!next && !st.live, next: nextVals,
+      playLabel: st.live ? 'Continuar partida' : 'Registrar partida',
+      onPlay: () => (st.live ? this.set({ tab: 'partidas' }) : this.startLive()),
+      stats: [{ label: 'Partidas jogadas', value: played }, { label: 'Total de gols', value: totalGoals }, { label: 'Gols de goleiro', value: totalKeeper }, { label: 'Média gols/jogo', value: played ? (totalGoals / played).toFixed(1) : '0.0' }],
+      mini: s.map((r, i) => ({
+        pos: i + 1, name: r.name, players: r.players, pts: r.pts,
+        bg: i === 0 ? 'var(--color-accent-100)' : 'var(--color-bg)',
+        posColor: i === 0 ? 'var(--color-accent)' : MUT,
+        onClick: () => this.set({ selTeam: r.id })
+      })),
+      rows: s.map((r, i) => ({
+        pos: i + 1, name: r.name, players: r.players, pts: r.pts, cells: cellsFor(r),
+        bg: i === 0 ? 'var(--color-accent-100)' : 'var(--color-bg)',
+        border: i === 0 ? 'var(--color-accent)' : 'var(--color-divider)',
+        posColor: i === 0 ? 'var(--color-accent)' : MUT,
+        onClick: () => this.set({ selTeam: r.id })
+      })),
+      goalOne: '1 ponto', goalKeeper: this.kw + ' pontos',
+      recent: t.matches.slice().reverse().slice(0, 3).map(matchRow),
+      hasHistory: t.matches.length > 0, noHistory: t.matches.length === 0,
+      timeline: t.matches.map((m, i) => {
+        const r = matchRow(m);
+        return { num: String(i + 1).padStart(2, '0'), pair: r.aName + ' vs ' + r.bName, label: m.label, score: r.score, bg: 'var(--color-bg)', numColor: 'var(--color-text)' };
+      }).concat(next ? [{ num: String(t.matches.length + 1).padStart(2, '0'), pair: this.tname(next.teamA) + ' vs ' + this.tname(next.teamB), label: next.label + ' · atual', score: '—', bg: 'var(--color-accent-100)', numColor: 'var(--color-accent)' }] : []),
+      scorers: scorers,
+      liveOpen: !!st.live, live: live || { label: '', sides: [] }, canFinish: canFinish, confirmLine: confirmLine, confirmKeeper: confirmKeeper,
+      showNextPanel: !st.live && !!next, onFinish: () => this.finish(), onUndo: () => this.undo(), onCancelLive: () => this.set({ live: null }),
+      teamCards: t.teams.map(tm => {
+        const r = this.statsFor(tm.id, gm);
+        return {
+          code: tm.code, name: tm.name, onName: e => this.renameTeam(tm.id, e.target.value),
+          players: tm.playerIds.map(pid => ({ name: this.pname(pid), onName: e => this.renamePlayer(pid, e.target.value) })),
+          cells: [{ k: 'PTS', v: r.pts }, { k: 'J', v: r.j }, { k: 'GF', v: r.gf }, { k: 'GG', v: r.gg }],
+          history: historyFor(tm.id).slice(0, 4)
+        };
+      }),
+      koNote: champId ? 'Torneio finalizado.' : (inGroup ? 'Liberado após as 8 partidas da fase de grupos. Semifinais: 1º x 4º e 2º x 3º.' : 'Semifinais e final definidas pela classificação.'),
+      hasChampion: !!champId, champion: champion || { name: '', players: '', stats: [] },
+      bracket: bracket,
+      detailOpen: !!detailTeam,
+      detail: detailTeam ? { name: detailTeam.name, players: detailTeam.players, cells: cellsFor(detailTeam), history: historyFor(detailTeam.id) } : { name: '', players: '', cells: [], history: [] },
+      onCloseDetail: () => this.set({ selTeam: null }),
+      adminOpen: st.admin, onAdmin: () => this.set({ admin: !st.admin }),
+      onDeleteLast: () => this.deleteLast(), onReset: () => this.reset()
+    };
+  }
+
+  setupVals() {
+    const st = this.state;
+    return {
+      isSetup: true, isApp: false,
+      showFields: !st.drawing && !st.draft,
+      drawing: st.drawing, hasDraft: !!st.draft,
+      shuffleNames: st.shuffleNames || [],
+      playerFields: st.names.map((v, i) => ({
+        label: 'Jogador ' + (i + 1), value: v, ph: 'Nome',
+        onChange: e => { const names = st.names.slice(); names[i] = e.target.value; this.setState({ names: names }); }
+      })),
+      draftTeams: st.draft ? st.draft.teams.map(tm => ({
+        code: tm.code, name: tm.name,
+        onName: e => {
+          const v = e.target.value.toUpperCase();
+          this.setState({ draft: { players: st.draft.players, teams: st.draft.teams.map(x => x.id === tm.id ? Object.assign({}, x, { name: v }) : x) } });
+        },
+        players: tm.playerIds.map(pid => ({
+          name: (st.draft.players.find(p => p.id === pid) || {}).name,
+          onName: e => {
+            const v = e.target.value;
+            this.setState({ draft: { teams: st.draft.teams, players: st.draft.players.map(p => p.id === pid ? Object.assign({}, p, { name: v }) : p) } });
+          }
+        }))
+      })) : [],
+      onSorteio: () => this.sortear(), onStart: () => this.start(),
+      nav: [], stats: [], mini: [], rows: [], recent: [], timeline: [], scorers: [], teamCards: [], bracket: [],
+      live: { label: '', sides: [] }, next: { label: '', aName: '', bName: '', aPlayers: '', bPlayers: '' },
+      champion: { name: '', players: '', stats: [] }, detail: { name: '', players: '', cells: [], history: [] },
+      tabInicio: false, tabPartidas: false, tabTabela: false, tabEquipes: false, tabMata: false,
+      liveOpen: false, canFinish: false, showNextPanel: false, hasNext: false, hasHistory: false, noHistory: false,
+      hasChampion: false, detailOpen: false, adminOpen: false
+    };
+  }
+}
+</script>
+</body>
+</html>
