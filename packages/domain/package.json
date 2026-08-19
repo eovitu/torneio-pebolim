@@ -1,0 +1,25 @@
+{
+  "name": "@pebolim/domain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Regras de negócio puras do campeonato de pebolim (partida, gols, estatísticas, classificação, artilharia). Sem dependência de framework — única fonte de verdade do domínio.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.19.0",
+    "vitest": "^4.1.11"
+  }
+}

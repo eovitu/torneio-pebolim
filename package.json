@@ -2,24 +2,30 @@
   "name": "torneio-pebolim",
   "private": true,
   "version": "0.1.0",
-  "description": "Aplicativo de torneio de pebolim — frontend React, API Hono/PostgreSQL, monorepo.",
+  "description": "Plataforma de campeonatos de pebolim — React + TypeScript no frontend (Vercel), Supabase como backend (PostgreSQL, Auth, Realtime, Storage).",
+  "author": "Victor Hugo (eovitu)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eovitu/torneio-pebolim.git"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n web,api -c blue,magenta \"npm run dev -w apps/web\" \"npm run dev -w apps/api\"",
+    "dev": "npm run dev -w apps/web",
     "dev:web": "npm run dev -w apps/web",
-    "dev:api": "npm run dev -w apps/api",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
-  },
-  "devDependencies": {
-    "concurrently": "^9.1.0"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "verify": "npm run typecheck && npm run lint && npm run test"
   },
   "engines": {
     "node": ">=20"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.21.5": true
   }
 }
