@@ -3,9 +3,11 @@ import { MATCH_DURATION_SECONDS, RULES_VERSION } from '@pebolim/domain'
 import { Card, Kicker, Note, Shell } from '../components/Shell'
 import { Botao, Formulario, LinhaAlternativa } from '../components/Formulario'
 import { useAuth } from '../auth/useAuth'
+import { usePapeis } from '../auth/usePapeis'
 
 export default function Home() {
   const { user, carregando, sair } = useAuth()
+  const { ehAdmin } = usePapeis()
 
   return (
     <Shell>
@@ -25,6 +27,11 @@ export default function Home() {
               <Note>
                 Conectado como <strong>{user.email}</strong>.
               </Note>
+              {ehAdmin && (
+                <LinhaAlternativa>
+                  <Link to="/admin/torneios">Administrar torneios</Link>
+                </LinhaAlternativa>
+              )}
               <Botao type="button" onClick={() => void sair()}>
                 Sair
               </Botao>

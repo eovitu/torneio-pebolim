@@ -268,6 +268,7 @@ export type Database = {
       phases: {
         Row: {
           created_at: string
+          encerrada_em: string | null
           id: string
           kind: Database['public']['Enums']['phase_kind']
           nome: string
@@ -276,6 +277,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          encerrada_em?: string | null
           id?: string
           kind: Database['public']['Enums']['phase_kind']
           nome: string
@@ -284,6 +286,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          encerrada_em?: string | null
           id?: string
           kind?: Database['public']['Enums']['phase_kind']
           nome?: string
@@ -534,6 +537,29 @@ export type Database = {
       conceder_papel: {
         Args: { p_role: Database['public']['Enums']['app_role']; p_user_id: string }
         Returns: undefined
+      }
+      criar_partida_mata_mata: {
+        Args: {
+          p_agendada_para?: string | null
+          p_phase_id: string
+          p_team_a_id: string
+          p_team_b_id: string
+        }
+        Returns: Database['public']['Tables']['matches']['Row']
+      }
+      encerrar_fase: {
+        Args: { p_phase_id: string }
+        Returns: Database['public']['Tables']['phases']['Row']
+      }
+      gerar_partidas_grupo: { Args: { p_phase_id: string }; Returns: number }
+      sortear_equipes: {
+        Args: {
+          p_nomes_equipes?: string[] | null
+          p_player_ids: string[]
+          p_seed?: number | null
+          p_tournament_id: string
+        }
+        Returns: { equipe: string; jogador: string; player_id: string; team_id: string }[]
       }
       elapsed_ms: {
         Args: { agora: string; m: Database['public']['Tables']['matches']['Row'] }
