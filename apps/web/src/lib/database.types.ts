@@ -185,6 +185,7 @@ export type Database = {
           phase_id: string
           phase_kind: Database['public']['Enums']['phase_kind']
           rodizio_resolvido_em: string | null
+          slot: string | null
           started_at: string | null
           status: Database['public']['Enums']['match_status']
           status_antes_pausa: Database['public']['Enums']['match_status'] | null
@@ -207,6 +208,7 @@ export type Database = {
           phase_id: string
           phase_kind: Database['public']['Enums']['phase_kind']
           rodizio_resolvido_em?: string | null
+          slot?: string | null
           started_at?: string | null
           status?: Database['public']['Enums']['match_status']
           status_antes_pausa?: Database['public']['Enums']['match_status'] | null
@@ -229,6 +231,7 @@ export type Database = {
           phase_id?: string
           phase_kind?: Database['public']['Enums']['phase_kind']
           rodizio_resolvido_em?: string | null
+          slot?: string | null
           started_at?: string | null
           status?: Database['public']['Enums']['match_status']
           status_antes_pausa?: Database['public']['Enums']['match_status'] | null
@@ -270,6 +273,7 @@ export type Database = {
       }
       phases: {
         Row: {
+          chaveamento: Json | null
           created_at: string
           encerrada_em: string | null
           id: string
@@ -279,6 +283,7 @@ export type Database = {
           tournament_id: string
         }
         Insert: {
+          chaveamento?: Json | null
           created_at?: string
           encerrada_em?: string | null
           id?: string
@@ -288,6 +293,7 @@ export type Database = {
           tournament_id: string
         }
         Update: {
+          chaveamento?: Json | null
           created_at?: string
           encerrada_em?: string | null
           id?: string
@@ -651,6 +657,12 @@ export type Database = {
         Returns: Database['public']['Tables']['phases']['Row']
       }
       gerar_partidas_grupo: { Args: { p_phase_id: string }; Returns: number }
+      gerar_eliminacao_dupla: {
+        Args: { p_phase_id: string; p_team_ids?: string[] | null }
+        Returns: number
+      }
+      avancar_eliminacao_dupla: { Args: { p_phase_id: string }; Returns: number }
+      montar_eliminacao_dupla: { Args: { p_equipes: number }; Returns: Json }
       sortear_equipes: {
         Args: {
           p_nomes_equipes?: string[] | null
@@ -790,7 +802,7 @@ export type Database = {
         | 'GOLDEN_GOAL_STARTED'
         | 'MATCH_FINISHED'
       match_status: 'SCHEDULED' | 'LIVE' | 'PAUSED' | 'GOLDEN_GOAL' | 'FINISHED'
-      phase_kind: 'GROUP' | 'KNOCKOUT'
+      phase_kind: 'GROUP' | 'KNOCKOUT' | 'DOUBLE_ELIMINATION'
       tournament_status: 'CONFIGURACAO' | 'AGUARDANDO_INICIO' | 'EM_ANDAMENTO' | 'ENCERRADO'
     }
     CompositeTypes: {

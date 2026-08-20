@@ -9,6 +9,7 @@
  */
 
 import type { MatchEvent, MatchStatus, PhaseKind } from './types.js'
+import { isMataMata } from './types.js'
 import { POINTS_DRAW, POINTS_LOSS, POINTS_WIN } from './types.js'
 import { computeMatchScore } from './scoring.js'
 
@@ -53,10 +54,11 @@ export function canRegisterGoal(status: MatchStatus): boolean {
 
 /**
  * Estado para o qual a partida vai quando os 180 s se esgotam.
- * Só o mata-mata empatado entra em gol de ouro.
+ * Só o mata-mata empatado entra em gol de ouro — e a eliminação dupla é
+ * mata-mata: não existe empate em nenhuma das suas chaves.
  */
 export function statusAtRegulationEnd(phaseKind: PhaseKind, outcome: MatchOutcome): MatchStatus {
-  if (phaseKind === 'KNOCKOUT' && outcome === 'DRAW') return 'GOLDEN_GOAL'
+  if (isMataMata(phaseKind) && outcome === 'DRAW') return 'GOLDEN_GOAL'
   return 'FINISHED'
 }
 

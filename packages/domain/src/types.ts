@@ -45,8 +45,19 @@ export type MatchEventType =
 
 export type MatchStatus = 'SCHEDULED' | 'LIVE' | 'PAUSED' | 'GOLDEN_GOAL' | 'FINISHED'
 
-/** Fase à qual a partida pertence. Define se o empate é permitido. */
-export type PhaseKind = 'GROUP' | 'KNOCKOUT'
+/**
+ * Fase à qual a partida pertence. Define se o empate é permitido.
+ *
+ * `DOUBLE_ELIMINATION` é a "Copa" (§ eliminação dupla): é mata-mata, e portanto
+ * empate nela vai para o Gol de Ouro exatamente como no mata-mata simples. O
+ * que muda é só o chaveamento — duas derrotas para sair, e não uma.
+ */
+export type PhaseKind = 'GROUP' | 'KNOCKOUT' | 'DOUBLE_ELIMINATION'
+
+/** Fases em que o empate não é resultado válido e o Gol de Ouro decide (§37). */
+export function isMataMata(kind: PhaseKind): boolean {
+  return kind === 'KNOCKOUT' || kind === 'DOUBLE_ELIMINATION'
+}
 
 export interface Player {
   id: string

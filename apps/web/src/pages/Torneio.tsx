@@ -36,6 +36,7 @@ import { midia } from '../design-system/tokens'
 
 const ABAS = [
   { id: 'tabela', rotulo: 'Tabela' },
+  { id: 'chave', rotulo: 'Chave' },
   { id: 'partidas', rotulo: 'Partidas' },
   { id: 'equipes', rotulo: 'Equipes' },
   { id: 'artilharia', rotulo: 'Artilharia' },
@@ -43,6 +44,24 @@ const ABAS = [
 ] as const
 
 type Aba = (typeof ABAS)[number]['id']
+
+/** Seções da chave, na ordem em que fazem sentido para quem acompanha. */
+const GRUPOS_DA_CHAVE = [
+  { chave: 'VENCEDORES', titulo: 'Chave dos vencedores' },
+  { chave: 'PERDEDORES', titulo: 'Chave dos perdedores' },
+  { chave: 'FINAIS', titulo: 'Finais' },
+] as const
+
+/**
+ * A que parte da chave um confronto pertence, pelo identificador do slot
+ * (`V2-1`, `P3-2`, `F`, `FR`) — o mesmo que o domínio monta.
+ */
+function chaveDoSlot(slot: string | null): string | null {
+  if (slot === null) return null
+  if (slot.startsWith('V')) return 'VENCEDORES'
+  if (slot.startsWith('P')) return 'PERDEDORES'
+  return 'FINAIS'
+}
 
 const BarraAbas = styled.div`
   display: flex;
@@ -168,6 +187,14 @@ export default function Torneio() {
       campeonato.participantes.some((p) => p.player_id === jogador.id),
     [campeonato, jogador],
   )
+
+  /** Partidas da Copa, se existir uma fase dessas neste torneio. */
+  const daCopa = useMemo(
+    () => campeonato?.partidas.filter((p) => p.linha.phase_kind === 'DOUBLE_ELIMINATION') ?? [],
+    [campeonato],
+  )
+  const temCopa =
+    daCopa.length > 0 || (campeonato?.fases.some((f) => f.kind === 'DOUBLE_ELIMINATION') ?? false)
 
   const executar = async (
     acao: () => PromiseLike<{ error: { message: string } | null }>,
@@ -369,7 +396,7 @@ export default function Torneio() {
         )}
 
         <BarraAbas role="tablist" aria-label="Seções do torneio">
-          {ABAS.map((a) => (
+          {ABAS.filter((a) => a.id !== 'chave' || temCopa).map((a) => (
             <Aba
               key={a.id}
               type="button"
@@ -399,6 +426,53 @@ export default function Torneio() {
               </Cartao>
             )}
           </Bloco>
+        )}
+
+        {/*
+          A Copa não é uma lista de jogos: é uma chave. Quem está olhando
+          precisa ver de onde cada equipe veio e para onde ela vai — sobretudo
+          que perder uma vez não é o fim.
+        */}
+        {aba === 'chave' && temCopa && (
+          <>
+            <Bloco>
+              <Texto $pequeno $mudo>
+                Perder uma vez não elimina: quem cai da chave dos vencedores continua na dos
+                perdedores. Sai quem perde duas vezes. Se o campeão dos perdedores vencer a final,
+                joga-se uma segunda final para decidir o título.
+              </Texto>
+            </Bloco>
+            {GRUPOS_DA_CHAVE.map(({ chave, titulo }) => {
+              const desteGrupo = daCopa.filter((p) => chaveDoSlot(p.linha.slot) === chave)
+              if (desteGrupo.length === 0) return null
+              return (
+                <Bloco key={chave}>
+                  <TituloSecao>
+                    <h2>{titulo}</h2>
+                    <Badge $tom="marca">{desteGrupo.length}</Badge>
+                  </TituloSecao>
+                  <Lista>
+                    {desteGrupo.map((p) => (
+                      <CartaoDePartida
+                        key={p.linha.id}
+                        partida={p.linha}
+                        nomeA={p.nomeA}
+                        nomeB={p.nomeB}
+                        placarA={p.placarA}
+                        placarB={p.placarB}
+                      />
+                    ))}
+                  </Lista>
+                </Bloco>
+              )
+            })}
+            {daCopa.length === 0 && (
+              <Vazio
+                titulo="A chave ainda não foi montada"
+                descricao="Assim que o organizador gerar o chaveamento, os confrontos aparecem aqui — e os seguintes surgem sozinhos conforme as partidas terminam."
+              />
+            )}
+          </>
         )}
 
         {aba === 'partidas' && (

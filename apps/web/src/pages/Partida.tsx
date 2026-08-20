@@ -43,6 +43,12 @@ import { Avatar, Badge, PontoAoVivo } from '../ui/Etiqueta'
 import { Confirmacao, Modal } from '../ui/Modal'
 import { midia } from '../design-system/tokens'
 
+const ROTULO_FASE: Record<string, string> = {
+  GROUP: 'Fase de grupos',
+  KNOCKOUT: 'Mata-mata',
+  DOUBLE_ELIMINATION: 'Copa (eliminação dupla)',
+}
+
 const ROTULO_EVENTO: Record<string, string> = {
   NORMAL_GOAL: 'Gol',
   KEEPER_GOAL: 'Gol de goleiro (vale 2)',
@@ -578,9 +584,7 @@ export default function Partida() {
       <Navegacao />
       <Pagina $estreita>
         <Bloco>
-          <Rotulo $cor="acento">
-            {partida.phase_kind === 'GROUP' ? 'Fase de grupos' : 'Mata-mata'}
-          </Rotulo>
+          <Rotulo $cor="acento">{ROTULO_FASE[partida.phase_kind]}</Rotulo>
           <h1 style={{ fontSize: 22 }}>{partida.label}</h1>
         </Bloco>
 

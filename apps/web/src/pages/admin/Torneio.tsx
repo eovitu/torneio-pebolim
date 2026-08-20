@@ -27,6 +27,7 @@ import {
   Layers,
   Plus,
   Settings2,
+  Trophy,
   Trash2,
   Undo2,
   UserPlus,
@@ -62,6 +63,13 @@ import { midia } from '../../design-system/tokens'
 
 type Torneio = Tables<'tournaments'>
 type StatusTorneio = Enums<'tournament_status'>
+
+/** Como cada formato de fase se chama na interface. */
+const ROTULO_FASE: Record<Enums<'phase_kind'>, string> = {
+  GROUP: 'Fase de grupos',
+  KNOCKOUT: 'Mata-mata',
+  DOUBLE_ELIMINATION: 'Copa (eliminação dupla)',
+}
 
 /** Próximo estado do campeonato, na ordem que o banco aceita. */
 const PROXIMO_STATUS: Partial<Record<StatusTorneio, StatusTorneio>> = {
@@ -190,6 +198,8 @@ export default function TorneioAdmin() {
   const [confronto, setConfronto] = useState<Record<string, { a: string; b: string }>>({})
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [modoFormacao, setModoFormacao] = useState<'sorteio' | 'manual'>('sorteio')
+  /** Ordem das equipes no chaveamento da Copa: a posição na lista é a posição na chave. */
+  const [ordemDaChave, setOrdemDaChave] = useState<string[]>([])
   /** Uma entrada por equipe a formar, na ordem: duplas primeiro, sozinhos depois. */
   const [montagem, setMontagem] = useState<{ clubId: string; jogadores: string[] }[]>([])
 
@@ -287,6 +297,15 @@ export default function TorneioAdmin() {
       }))
     })
   }, [composicaoAtual])
+
+  // A chave começa na ordem em que as equipes aparecem; o admin reordena.
+  useEffect(() => {
+    setOrdemDaChave((atual) => {
+      const ids = equipes.map((e) => e.id)
+      const mesmas = atual.length === ids.length && atual.every((id) => ids.includes(id))
+      return mesmas ? atual : ids
+    })
+  }, [equipes])
 
   const nomeDe = useCallback(
     (teamId: string) => equipes.find((e) => e.id === teamId)?.nome ?? '—',
@@ -983,6 +1002,9 @@ export default function TorneioAdmin() {
                   >
                     <option value="GROUP">Fase de grupos — empate permitido</option>
                     <option value="KNOCKOUT">Mata-mata — empate leva a gol de ouro</option>
+                    <option value="DOUBLE_ELIMINATION">
+                      Copa (eliminação dupla) — só sai com duas derrotas
+                    </option>
                   </Selecao>
                 </Campo>
               </Grade2>
@@ -1009,8 +1031,7 @@ export default function TorneioAdmin() {
                   <TituloSecao>
                     <div>
                       <Rotulo>
-                        {f.kind === 'GROUP' ? 'Fase de grupos' : 'Mata-mata'} · {daFase.length}{' '}
-                        jogo(s)
+                        {ROTULO_FASE[f.kind]} · {daFase.length} jogo(s)
                       </Rotulo>
                       <h3>{f.nome}</h3>
                     </div>
@@ -1032,6 +1053,72 @@ export default function TorneioAdmin() {
                     >
                       Gerar todos contra todos
                     </Botao>
+                  )}
+
+                  {/*
+                    Copa: a chave inteira é montada de uma vez e anda sozinha a
+                    cada partida encerrada — o vencedor sobe, o perdedor cai
+                    para a chave dos perdedores, e quem perde de novo sai. A
+                    ordem que o administrador escolhe aqui É o chaveamento; o
+                    sistema não inventa critério de semeadura (§67).
+                  */}
+                  {f.kind === 'DOUBLE_ELIMINATION' && !encerrada && daFase.length === 0 && (
+                    <Formulario
+                      onSubmit={(ev) => {
+                        ev.preventDefault()
+                        void executar(
+                          () =>
+                            supabase.rpc('gerar_eliminacao_dupla', {
+                              p_phase_id: f.id,
+                              p_team_ids: ordemDaChave.length > 0 ? ordemDaChave : null,
+                            }),
+                          'Chave gerada. Os confrontos seguintes aparecem sozinhos conforme as partidas terminam.',
+                        )
+                      }}
+                    >
+                      <Texto $pequeno $mudo>
+                        Perder uma vez não elimina: quem perde na chave dos vencedores cai para a
+                        dos perdedores e continua. Sai quem perde duas vezes. Se o campeão dos
+                        perdedores vencer a final, joga-se uma segunda final.
+                      </Texto>
+                      <Texto $pequeno $mudo>
+                        A ordem abaixo é o chaveamento — o 1º enfrenta o último, e assim por diante.
+                        Com um número que não fecha uma potência de 2, os primeiros passam direto na
+                        primeira rodada.
+                      </Texto>
+                      <ListaSelecao>
+                        {ordemDaChave.map((teamId, indice) => (
+                          <LinhaLista key={teamId}>
+                            <Badge $tom="neutro">{indice + 1}º</Badge>
+                            <span>{nomeDe(teamId)}</span>
+                            <Botao
+                              type="button"
+                              $variante="fantasma"
+                              $tamanho="sm"
+                              disabled={ocupado || indice === 0}
+                              aria-label={`Subir ${nomeDe(teamId)}`}
+                              onClick={() =>
+                                setOrdemDaChave((atual) => {
+                                  const proxima = [...atual]
+                                  const anterior = proxima[indice - 1]
+                                  const este = proxima[indice]
+                                  if (anterior === undefined || este === undefined) return atual
+                                  proxima[indice - 1] = este
+                                  proxima[indice] = anterior
+                                  return proxima
+                                })
+                              }
+                            >
+                              ↑
+                            </Botao>
+                          </LinhaLista>
+                        ))}
+                      </ListaSelecao>
+                      <Botao type="submit" disabled={ocupado || equipes.length < 2}>
+                        <Trophy size={16} aria-hidden="true" />
+                        Gerar a chave
+                      </Botao>
+                    </Formulario>
                   )}
 
                   {f.kind === 'KNOCKOUT' && !encerrada && (

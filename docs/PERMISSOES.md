@@ -35,6 +35,9 @@ montado sobre `players`, e nem e-mail nem data de nascimento saem de lá.
 | Decidir o rodízio | **o juiz da partida** (quem a iniciou) ou admin | `resolver_rodizio` |
 | Desfazer o sorteio | admin, e só sem nenhuma partida | `desfazer_sorteio` |
 | Criar fases / partidas | admin | `phases_*`, `criar_partida_mata_mata`, `gerar_partidas_grupo` |
+| Gerar a chave da Copa | admin | `gerar_eliminacao_dupla` |
+| Montar as equipes a mao | admin | `formar_equipes_manual` |
+| Guardar um time para sempre | admin ou quem joga nele | `salvar_equipe_como_clube` |
 | Entrar em um torneio | qualquer conta | `inscrever_se_no_torneio` |
 | Sair de um torneio | a própria pessoa | `sair_do_torneio` |
 | Iniciar partida | jogador do torneio ou admin | `iniciar_partida` |
@@ -181,3 +184,41 @@ Quem pode é quem opera a partida (`is_operador_da_partida`), e não só o
 administrador — quem está com o celular na mão é quem precisa da saída.
 Partida ENCERRADA não é zerada por aqui: o resultado já valeu para a
 classificação, e desfazê-lo é correção administrativa.
+
+## 11. Times permanentes (clubes)
+
+`teams` continua sendo a PARTICIPAÇÃO de um time em um torneio — é sobre ela
+que a classificação, as partidas e as escalações daquele campeonato se apoiam.
+`clubs` é a identidade que atravessa campeonatos: nome, escudo, descrição, cor
+e a dupla permanente.
+
+```
+clubs            identidade permanente
+  ^ club_id
+teams            participação daquele clube em UM torneio
+```
+
+Nenhuma regra esportiva mudou: somar a campanha do clube é somar as
+participações, e o domínio já agrega qualquer conjunto de partidas.
+
+`clubs` e `club_members` têm leitura pública e **nenhum** grant de escrita para
+o cliente: tudo passa por RPC com SECURITY DEFINER. Personalizar a participação
+propaga para o clube por gatilho, para que a personalização não se perca entre
+campeonatos.
+
+## 12. Formatos de fase
+
+| `phase_kind` | Empate | Como as partidas nascem |
+| --- | --- | --- |
+| `GROUP` | permitido (§36) | `gerar_partidas_grupo`, todas de uma vez |
+| `KNOCKOUT` | vai a Gol de Ouro (§37) | `criar_partida_mata_mata`, uma a uma |
+| `DOUBLE_ELIMINATION` | vai a Gol de Ouro (§37) | `gerar_eliminacao_dupla` monta a chave; `avancar_eliminacao_dupla` cria os confrontos seguintes sozinho |
+
+A eliminação dupla é a "Copa", confirmada pelo proprietário em 20/08/2026:
+quem perde na chave dos vencedores cai para a dos perdedores e continua; sai
+quem perde a segunda vez; a final junta os dois campeões; e se o campeão dos
+perdedores vencer a final, joga-se uma **segunda final**.
+
+A regra vive em `packages/domain/src/eliminacaoDupla.ts`, coberta por teste; o
+banco é o espelho dela. A ORDEM do chaveamento é escolha do administrador — o
+sistema não inventa critério de semeadura (§67).
