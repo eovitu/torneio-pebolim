@@ -43,6 +43,11 @@ function useCanalDePartidas(chave: string | null, aoMudar: () => void) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () =>
         callback.current(),
       )
+      // O rodízio troca jogadores de equipe; sem isto, elenco e tabela ficariam
+      // desatualizados na tela de quem está acompanhando.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_players' }, () =>
+        callback.current(),
+      )
       .subscribe((estado) => {
         const ok = estado === 'SUBSCRIBED'
         setSincronizado(ok)

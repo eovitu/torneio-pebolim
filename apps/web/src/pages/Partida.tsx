@@ -25,7 +25,7 @@ import {
   isRegulationOver,
 } from '@pebolim/domain'
 import type { GoalEventType } from '@pebolim/domain'
-import { Minus, Pause, Play, Square, Target, WifiOff } from 'lucide-react'
+import { Minus, Pause, Play, Square, Target, Users, WifiOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 import { useAuth } from '../auth/useAuth'
@@ -33,6 +33,7 @@ import { usePapeis } from '../auth/usePapeis'
 import { usePartida } from '../partida/usePartida'
 import { paraRelogioDoDominio } from '../partida/adaptadores'
 import { useRelogioServidor } from '../partida/useRelogioServidor'
+import { useRodizio } from '../partida/useRodizio'
 import { descreverErro } from '../dados/campeonato'
 import { Navegacao } from '../components/Navegacao'
 import { Bloco, Cartao, Pagina, Rotulo, Texto, TituloSecao } from '../ui/Superficie'
@@ -290,6 +291,37 @@ const Relogio = styled.span`
   color: ${({ theme }) => theme.color.muted};
 `
 
+/** Cartão da recomposição, depois que a partida encerra. */
+const CartaoRodizio = styled.section`
+  border: 2px solid ${({ theme }) => theme.color.accent};
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: ${({ theme }) => theme.color.bola[50]};
+  padding: ${({ theme }) => theme.space[5]};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space[3]};
+  animation: pb-surgir ${({ theme }) => theme.motion.lento}
+    ${({ theme }) => theme.motion.entrada} both;
+
+  h2 {
+    font-size: ${({ theme }) => theme.fontSize.h4};
+  }
+`
+
+const Troca = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space[2]};
+  padding: ${({ theme }) => theme.space[4]};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  background: ${({ theme }) => theme.color.surface};
+  font-size: ${({ theme }) => theme.fontSize.small};
+
+  strong {
+    color: ${({ theme }) => theme.color.campo[700]};
+  }
+`
+
 const AvisoConexao = styled.div`
   display: flex;
   align-items: center;
@@ -333,6 +365,26 @@ export default function Partida() {
     },
     [recarregar],
   )
+
+  /**
+   * Rodízio de quem joga sozinho.
+   *
+   * O hook fica ANTES dos retornos antecipados, como manda a regra dos hooks.
+   * Ele só consulta o servidor quando a partida terminou e quem está olhando é
+   * quem pode decidir — o espectador não precisa disso.
+   *
+   * Quem decide é o JUIZ da partida, quem a iniciou, e não o administrador:
+   * decisão do proprietário. O `ehAdmin` entra só como rede de segurança, e o
+   * servidor revalida os dois (§45).
+   */
+  const souDecisorDoRodizio =
+    user !== null &&
+    (ehAdmin ||
+      dados?.partida.arbitro_user_id === user.id ||
+      dados?.partida.iniciada_por === user.id)
+  const rodizioPendente =
+    dados?.partida.status === 'FINISHED' && dados.partida.rodizio_resolvido_em === null
+  const rodizio = useRodizio(id, rodizioPendente === true && souDecisorDoRodizio)
 
   if (carregando) {
     return (
@@ -556,6 +608,69 @@ export default function Partida() {
         )}
 
         {erroAcao !== null && <Erro>{erroAcao}</Erro>}
+        {rodizio.erro !== null && <Erro>{rodizio.erro}</Erro>}
+
+        {/* Recomposição para a próxima partida. Só aparece para quem conduziu
+            esta, e só quando há alguém jogando sozinho no torneio. */}
+        {rodizio.sugestao !== null && (
+          <CartaoRodizio>
+            <h2>
+              <Users size={20} aria-hidden="true" style={{ verticalAlign: '-4px' }} /> Dupla nova
+              para a próxima
+            </h2>
+            <Texto $pequeno $mudo>
+              {rodizio.sugestao.solitario_nome} está jogando sozinho. Pela regra do campeonato,
+              quem perdeu empresta um jogador para a próxima partida — e quem sobra passa a ser o
+              sozinho da vez, para ninguém ficar sempre sem dupla.
+            </Texto>
+
+            <Troca>
+              <span>
+                <strong>{rodizio.sugestao.vai_nome}</strong> sai de {rodizio.sugestao.de_equipe} e
+                joga com <strong>{rodizio.sugestao.solitario_nome}</strong> (
+                {rodizio.sugestao.para_equipe}).
+              </span>
+              <span>
+                <strong>{rodizio.sugestao.fica_nome}</strong> fica sozinho em{' '}
+                {rodizio.sugestao.de_equipe}.
+              </span>
+              <Texto $pequeno $mudo>
+                {rodizio.sugestao.vai_nome} já jogou sozinho {rodizio.sugestao.vai_sozinho}×;{' '}
+                {rodizio.sugestao.fica_nome}, {rodizio.sugestao.fica_sozinho}×.
+              </Texto>
+            </Troca>
+
+            <Acoes>
+              <Botao
+                type="button"
+                $tamanho="lg"
+                $bloco
+                disabled={rodizio.ocupado}
+                onClick={() =>
+                  void rodizio.resolver(true).then((ok) => {
+                    if (ok) void recarregar()
+                  })
+                }
+              >
+                {rodizio.ocupado ? 'Aplicando…' : 'Confirmar dupla nova'}
+              </Botao>
+              <Botao
+                type="button"
+                $variante="contorno"
+                $tamanho="lg"
+                $bloco
+                disabled={rodizio.ocupado}
+                onClick={() =>
+                  void rodizio.resolver(false).then((ok) => {
+                    if (ok) void recarregar()
+                  })
+                }
+              >
+                Manter como está
+              </Botao>
+            </Acoes>
+          </CartaoRodizio>
+        )}
 
         {partida.status === 'SCHEDULED' && podeIniciar && (
           <Botao type="button" $tamanho="lg" $bloco onClick={() => setConfirmandoInicio(true)}>

@@ -31,6 +31,8 @@ montado sobre `players`, e nem e-mail nem data de nascimento saem de lá.
 | --- | --- | --- |
 | Criar/configurar torneio | admin | policy `tournaments_*_admin` |
 | Sortear equipes | admin | `sortear_equipes` |
+| **Começar o torneio** | admin **ou qualquer inscrito**, com ≥2 pessoas | `iniciar_torneio` |
+| Decidir o rodízio | **o juiz da partida** (quem a iniciou) ou admin | `resolver_rodizio` |
 | Desfazer o sorteio | admin, e só sem nenhuma partida | `desfazer_sorteio` |
 | Criar fases / partidas | admin | `phases_*`, `criar_partida_mata_mata`, `gerar_partidas_grupo` |
 | Entrar em um torneio | qualquer conta | `inscrever_se_no_torneio` |
@@ -44,7 +46,7 @@ montado sobre `players`, e nem e-mail nem data de nascimento saem de lá.
 | Trocar foto | a própria pessoa | policy do Storage por pasta = `auth.uid()` |
 | Criar contas | admin | Edge Function `admin-criar-usuario` |
 | Vincular jogador a conta | admin | `vincular_jogador_conta` |
-| Excluir torneio | admin, e só sem nenhuma partida | `excluir_torneio` |
+| Excluir torneio | admin, e só sem partida **disputada** | `excluir_torneio` |
 
 Em `teams`, a policy decide QUAIS linhas cada um altera e o grant por coluna
 decide QUAIS campos: só `nome`, `descricao`, `logo_url` e `cor_primaria` são
@@ -72,7 +74,28 @@ O administrador continua podendo inscrever quem não tem conta, pelo nome.
 Sair só é possível enquanto as inscrições estão abertas e antes de ter sido
 sorteado em uma equipe.
 
-## 5. Nome e foto: `profiles` privado, `players` público
+## 5. Rodízio de quem joga sozinho
+
+Regra do proprietário (20/08/2026). Com número ímpar, uma equipe fica com uma
+pessoa só e ninguém pode ficar sozinho o campeonato inteiro. Depois de cada
+partida encerrada, quem PERDEU empresta um jogador para o solitário; quem sobra
+na perdedora passa a ser o sozinho da vez.
+
+- vai quem **já ficou mais vezes sozinho** — ele escapa do solo e a vez passa
+  ao companheiro; desempate por quem menos formou dupla com o solitário atual;
+- se quem perdeu foi a própria equipe de um, **nada muda**;
+- acontece **a cada partida encerrada**;
+- quem confirma é o **juiz daquela partida**, não o administrador. Recusar
+  também resolve: a composição segue e a tela para de perguntar.
+
+A regra vive em `packages/domain/src/rodizio.ts`; `rodizio_sugerido` no banco é
+o espelho dela mais a contagem do histórico.
+
+**Partidas encerradas são imutáveis.** `match_lineups` é um retrato por
+partida, e o rodízio só reescreve a escalação das partidas ainda AGENDADAS —
+via `trg_30_ressincronizar_escalacoes`. Quem jogou, jogou.
+
+## 6. Nome e foto: `profiles` privado, `players` público
 
 `profiles` é privado (só o dono e o admin leem). `players` é o que aparece
 publicamente — em escalação, artilharia, histórico e perfil público.
@@ -91,7 +114,7 @@ e sem foto.
 `players.foto_url` só é sobrescrita quando o perfil tem foto, para não apagar a
 imagem que o organizador possa ter posto em um jogador sem conta.
 
-## 6. Aceite das regras
+## 7. Aceite das regras
 
 Duas coisas diferentes, de propósito:
 
@@ -112,7 +135,7 @@ Ao confirmar, o aceite da versão vigente é gravado em `rules_acceptance` se
 ainda não existir — é assim que contas criadas pelo administrador passam a ter
 registro.
 
-## 7. O que a interface NÃO decide
+## 8. O que a interface NÃO decide
 
 - se você pode operar uma partida — `is_operador_da_partida`;
 - se você é administrador — `is_admin`;

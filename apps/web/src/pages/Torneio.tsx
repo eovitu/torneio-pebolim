@@ -13,7 +13,8 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { Check, LogIn, Trophy, Users, WifiOff } from 'lucide-react'
+import { Check, LogIn, Play, Trophy, Users, WifiOff } from 'lucide-react'
+import { MIN_PARTICIPANTES } from '@pebolim/domain'
 import { Navegacao } from '../components/Navegacao'
 import { CartaoDePartida, CartaoDeTime, LinhaDeJogador, Numero, GradeDeNumeros } from '../components/Cartoes'
 import { Artilharia, Classificacao } from '../components/Tabelas'
@@ -215,6 +216,15 @@ export default function Torneio() {
 
   const jogadorPorId = new Map(jogadores.map((j) => [j.id, j]))
   const inscricoesAbertas = torneio.status === 'CONFIGURACAO'
+  /**
+   * Quem está inscrito pode começar o torneio, desde que haja duas pessoas.
+   * O servidor sorteia as equipes, cria a fase de grupos e gera os confrontos
+   * de uma vez — nenhum passo de administrador no caminho.
+   */
+  const podeComecar =
+    souParticipante &&
+    participantes.length >= MIN_PARTICIPANTES &&
+    (torneio.status === 'CONFIGURACAO' || torneio.status === 'AGUARDANDO_INICIO')
   const aoVivo = partidas.filter((p) => estaAoVivo(p.linha))
   const agendadas = partidas.filter((p) => p.linha.status === 'SCHEDULED')
   const encerradas = partidas.filter((p) => p.linha.status === 'FINISHED')
@@ -247,6 +257,26 @@ export default function Torneio() {
                     <Check size={14} aria-hidden="true" />
                     Você está inscrito
                   </Badge>
+                  {/* Começar o torneio é público, como iniciar uma partida:
+                      qualquer inscrito pode, desde que haja duas pessoas.
+                      Decisão do proprietário (20/08/2026). O servidor
+                      revalida quem é participante (§45). */}
+                  {podeComecar && (
+                    <Botao
+                      type="button"
+                      $variante="primario"
+                      disabled={ocupado}
+                      onClick={() =>
+                        void executar(
+                          () => supabase.rpc('iniciar_torneio', { p_tournament_id: torneio.id }),
+                          'Torneio começou! As partidas já estão valendo.',
+                        )
+                      }
+                    >
+                      <Play size={16} aria-hidden="true" />
+                      {ocupado ? 'Começando…' : 'Começar torneio'}
+                    </Botao>
+                  )}
                   {inscricoesAbertas && (
                     <Botao
                       type="button"

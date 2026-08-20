@@ -184,6 +184,7 @@ export type Database = {
           paused_at: string | null
           phase_id: string
           phase_kind: Database['public']['Enums']['phase_kind']
+          rodizio_resolvido_em: string | null
           started_at: string | null
           status: Database['public']['Enums']['match_status']
           status_antes_pausa: Database['public']['Enums']['match_status'] | null
@@ -205,6 +206,7 @@ export type Database = {
           paused_at?: string | null
           phase_id: string
           phase_kind: Database['public']['Enums']['phase_kind']
+          rodizio_resolvido_em?: string | null
           started_at?: string | null
           status?: Database['public']['Enums']['match_status']
           status_antes_pausa?: Database['public']['Enums']['match_status'] | null
@@ -226,6 +228,7 @@ export type Database = {
           paused_at?: string | null
           phase_id?: string
           phase_kind?: Database['public']['Enums']['phase_kind']
+          rodizio_resolvido_em?: string | null
           started_at?: string | null
           status?: Database['public']['Enums']['match_status']
           status_antes_pausa?: Database['public']['Enums']['match_status'] | null
@@ -602,6 +605,31 @@ export type Database = {
         Returns: { equipe: string; jogador: string; player_id: string; team_id: string }[]
       }
       desfazer_sorteio: { Args: { p_tournament_id: string }; Returns: undefined }
+      iniciar_torneio: {
+        Args: { p_tournament_id: string }
+        Returns: Database['public']['Tables']['tournaments']['Row']
+      }
+      is_participante_do_torneio: {
+        Args: { p_tournament_id: string; uid: string }
+        Returns: boolean
+      }
+      resolver_rodizio: { Args: { p_match_id: string; p_aceitar: boolean }; Returns: undefined }
+      rodizio_sugerido: {
+        Args: { p_match_id: string }
+        Returns: {
+          vai_player_id: string
+          vai_nome: string
+          vai_sozinho: number
+          fica_player_id: string
+          fica_nome: string
+          fica_sozinho: number
+          de_team_id: string
+          de_equipe: string
+          para_team_id: string
+          para_equipe: string
+          solitario_nome: string
+        }[]
+      }
       composicao_de_equipes: {
         Args: { p_total: number }
         Returns: { duplas: number; solos: number; equipes: number }

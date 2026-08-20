@@ -256,6 +256,8 @@ export default function TorneioAdmin() {
     return j === undefined ? [] : [{ ...j, autoInscrito: p.auto_inscrito }]
   })
   const semEquipe = inscritos.filter((j) => !elencos.some((l) => l.player_id === j.id))
+  /** Histórico é partida DISPUTADA; agendada que nunca rolou não é histórico. */
+  const disputadas = partidas.filter((p) => p.status === 'FINISHED').length
   const idsInscritos = new Set(participantes.map((p) => p.player_id))
   const jaCadastrados = jogadores.filter((j) => !idsInscritos.has(j.id))
 
@@ -902,29 +904,38 @@ export default function TorneioAdmin() {
         </Bloco>
 
         {/* ---------------------------------------------------------------- */}
-        {partidas.length === 0 && (
-          <ZonaDeRisco>
+        {/* A zona de risco agora aparece SEMPRE. Antes ela sumia de qualquer
+            torneio com partidas — e como começar um torneio já gera todos os
+            confrontos de uma vez, isso passou a ser todo torneio, inclusive os
+            de teste que nunca rolaram. Histórico é partida DISPUTADA. */}
+        <ZonaDeRisco>
             <h2>
               <AlertTriangle size={20} aria-hidden="true" />
               Zona de risco
             </h2>
             <Texto $pequeno style={{ margin: '12px 0 16px' }}>
-              Excluir apaga o torneio de vez, com equipes e fases. Só é possível enquanto não houver
-              nenhuma partida: com partida existe histórico, e histórico não se apaga. Para tirar do
-              caminho um torneio que já tem jogos, encerre-o.
+              Excluir apaga o torneio de vez, com equipes, fases e partidas ainda não disputadas.
+              Só deixa de ser possível quando alguma partida já foi jogada: aí existe histórico, e
+              histórico não se apaga — nesse caso, encerre o campeonato.
             </Texto>
-            <Botao type="button" $variante="perigo" onClick={() => setConfirmandoExclusao(true)}>
-              <Trash2 size={16} aria-hidden="true" />
-              Excluir este torneio
-            </Botao>
+            {disputadas === 0 ? (
+              <Botao type="button" $variante="perigo" onClick={() => setConfirmandoExclusao(true)}>
+                <Trash2 size={16} aria-hidden="true" />
+                Excluir este torneio
+              </Botao>
+            ) : (
+              <Aviso>
+                Este torneio já tem {disputadas} partida(s) disputada(s) — isso é histórico e não
+                se apaga. Para tirá-lo do caminho, encerre o campeonato lá em cima.
+              </Aviso>
+            )}
           </ZonaDeRisco>
-        )}
       </Pagina>
 
       <Confirmacao
         aberto={confirmandoExclusao}
         titulo="Excluir torneio definitivamente?"
-        descricao="Esta ação não pode ser desfeita. O torneio, as equipes e as fases serão apagados. Os jogadores continuam existindo, porque podem estar em outros campeonatos."
+        descricao="Esta ação não pode ser desfeita. O torneio, as equipes, as fases e as partidas ainda não disputadas serão apagados. Os jogadores continuam existindo, porque podem estar em outros campeonatos."
         exigirTexto={torneio.nome}
         rotuloConfirmar="Excluir definitivamente"
         destrutivo
