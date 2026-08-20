@@ -104,12 +104,19 @@ const Acoes = styled.div`
 `
 
 interface Props {
-  onCancelar: () => void
+  /**
+   * Quando ausente, o modal é OBRIGATÓRIO: não há botão de cancelar e o Esc
+   * não fecha. É assim que ele aparece na entrada do app — a pessoa precisa
+   * ler e confirmar antes de usar qualquer tela.
+   */
+  onCancelar?: () => void
   /** Recebe a versão efetivamente lida, que é a gravada no aceite. */
   onAceitar: (versao: string) => void
+  /** Texto de apoio acima dos botões. */
+  aviso?: string
 }
 
-export function ModalRegras({ onCancelar, onAceitar }: Props) {
+export function ModalRegras({ onCancelar, onAceitar, aviso }: Props) {
   const corpoRef = useRef<HTMLDivElement>(null)
   const [leuTudo, setLeuTudo] = useState(false)
 
@@ -128,6 +135,7 @@ export function ModalRegras({ onCancelar, onAceitar }: Props) {
   }, [verificarRolagem])
 
   useEffect(() => {
+    if (onCancelar === undefined) return
     const aoTeclar = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancelar()
     }
@@ -157,11 +165,14 @@ export function ModalRegras({ onCancelar, onAceitar }: Props) {
         </Corpo>
 
         <Rodape>
+          {aviso !== undefined && <Dica>{aviso}</Dica>}
           {!leuTudo && <Dica>Role até o fim para poder aceitar.</Dica>}
           <Acoes>
-            <BotaoSecundario type="button" onClick={onCancelar}>
-              Cancelar
-            </BotaoSecundario>
+            {onCancelar !== undefined && (
+              <BotaoSecundario type="button" onClick={onCancelar}>
+                Cancelar
+              </BotaoSecundario>
+            )}
             <Botao type="button" disabled={!leuTudo} onClick={() => onAceitar(RULES_VERSION)}>
               Li e aceito
             </Botao>

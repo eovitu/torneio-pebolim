@@ -21,6 +21,16 @@ export interface EstadoAutenticacao {
   user: User | null
   /** `true` enquanto a sessão persistida ainda não foi restaurada. */
   carregando: boolean
+  /**
+   * A pessoa já confirmou as regras NESTA sessão de navegador.
+   *
+   * Vive só em memória, de propósito: o modal precisa aparecer a cada login
+   * novo. O registro permanente de quem aceitou qual versão continua sendo a
+   * tabela `rules_acceptance` — são duas coisas diferentes.
+   */
+  regrasConfirmadasNestaSessao: boolean
+  /** Marca as regras como confirmadas nesta sessão e registra o aceite. */
+  confirmarRegras: (versao: string) => Promise<void>
   entrar: (email: string, senha: string) => Promise<void>
   cadastrar: (dados: DadosCadastro) => Promise<{ precisaConfirmarEmail: boolean }>
   sair: () => Promise<void>
