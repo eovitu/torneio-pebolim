@@ -68,12 +68,24 @@ Resumo do que o domínio garante:
 
 | Documento | Conteúdo |
 | --- | --- |
-| `ARCHITECTURE.md` | Arquitetura da aplicação e do Supabase |
-| `DATABASE.md` | Modelo de dados e migrations |
-| `SECURITY.md` | Auth, RLS, Storage e tratamento de secrets |
-| `CONTRIBUTING.md` | Padrões de código e de commit |
-| `CHANGELOG.md` | Histórico de versões |
-| `IMPLEMENTATION_STATUS.md` | O que está pronto e o que falta |
+| [`docs/FRONTEND.md`](docs/FRONTEND.md) | Design system, navegação, rotas, camada de dados, realtime e testes da web |
+| [`docs/PERMISSOES.md`](docs/PERMISSOES.md) | Quem pode o quê, onde cada permissão é validada e as regras de inscrição e de aceite |
+| `supabase/migrations/` | Modelo de dados, RLS e funções — cada arquivo documenta a própria decisão |
+
+Ainda não escritos: `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`,
+`CONTRIBUTING.md`, `CHANGELOG.md`, `IMPLEMENTATION_STATUS.md`.
+
+## Estado da implementação
+
+| Área | Situação |
+| --- | --- |
+| Domínio das regras | pronto e testado (72 testes) |
+| Schema, RLS, funções e auditoria | no ar |
+| Auth, perfis e Storage de avatares | no ar |
+| Realtime da partida | no ar |
+| Frontend — navegação, Home, torneios, times, partidas, perfis, admin | no ar |
+| Autoinscrição em torneio | no ar |
+| Aceite obrigatório das regras por sessão | no ar |
 
 ---
 
