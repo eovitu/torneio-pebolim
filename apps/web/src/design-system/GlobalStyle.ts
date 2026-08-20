@@ -27,6 +27,12 @@ export const GlobalStyle = createGlobalStyle`
     min-height: 100dvh;
   }
 
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
   h1, h2, h3, h4 {
     font-family: ${({ theme }) => theme.font.heading};
     font-weight: ${({ theme }) => theme.font.headingWeight};

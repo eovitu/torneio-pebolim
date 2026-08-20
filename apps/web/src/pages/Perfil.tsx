@@ -28,6 +28,7 @@ import {
   Formulario,
   LinhaAlternativa,
 } from '../components/Formulario'
+import { Navegacao } from '../components/Navegacao'
 
 const Foto = styled.img`
   display: block;
@@ -191,85 +192,88 @@ export default function Perfil() {
   }
 
   return (
-    <Shell>
-      <Card>
-        <Kicker>Perfil</Kicker>
-        <h1>Sua conta</h1>
-        <Note>{user?.email}</Note>
+    <>
+      <Navegacao />
+      <Shell>
+        <Card>
+          <Kicker>Perfil</Kicker>
+          <h1>Sua conta</h1>
+          <Note>{user?.email}</Note>
 
-        {erro !== null && <Alerta>{erro}</Alerta>}
-        {aviso !== null && <Aviso>{aviso}</Aviso>}
+          {erro !== null && <Alerta>{erro}</Alerta>}
+          {aviso !== null && <Aviso>{aviso}</Aviso>}
 
-        {perfil?.avatar_url ? (
-          <Foto src={perfil.avatar_url} alt="Sua foto de perfil" />
-        ) : (
-          <SemFoto>sem foto</SemFoto>
-        )}
+          {perfil?.avatar_url ? (
+            <Foto src={perfil.avatar_url} alt="Sua foto de perfil" />
+          ) : (
+            <SemFoto>sem foto</SemFoto>
+          )}
 
-        <Campo>
-          Foto de perfil
-          <input
-            ref={arquivoRef}
-            type="file"
-            accept={TIPOS_ACEITOS.join(',')}
-            disabled={ocupado}
-            onChange={(e) => void enviarFoto(e)}
-          />
-        </Campo>
-
-        <Formulario onSubmit={(e) => void salvarDados(e)}>
           <Campo>
-            Nome de exibição
-            <Entrada value={nome} onChange={(e) => setNome(e.target.value)} minLength={2} />
-          </Campo>
-          <Campo>
-            Data de nascimento (opcional)
-            <Entrada
-              type="date"
-              value={nascimento}
-              onChange={(e) => setNascimento(e.target.value)}
+            Foto de perfil
+            <input
+              ref={arquivoRef}
+              type="file"
+              accept={TIPOS_ACEITOS.join(',')}
+              disabled={ocupado}
+              onChange={(e) => void enviarFoto(e)}
             />
           </Campo>
-          <Botao type="submit" disabled={ocupado}>
-            Salvar dados
-          </Botao>
-        </Formulario>
 
-        <Divisor />
+          <Formulario onSubmit={(e) => void salvarDados(e)}>
+            <Campo>
+              Nome de exibição
+              <Entrada value={nome} onChange={(e) => setNome(e.target.value)} minLength={2} />
+            </Campo>
+            <Campo>
+              Data de nascimento (opcional)
+              <Entrada
+                type="date"
+                value={nascimento}
+                onChange={(e) => setNascimento(e.target.value)}
+              />
+            </Campo>
+            <Botao type="submit" disabled={ocupado}>
+              Salvar dados
+            </Botao>
+          </Formulario>
 
-        <Formulario onSubmit={(e) => void trocarSenha(e)}>
-          <Kicker>Segurança</Kicker>
-          <Note>
-            Se você entrou com a senha padrão distribuída pelo organizador, troque agora por uma
-            só sua.
-          </Note>
-          <Campo>
-            Nova senha
-            <Entrada
-              type="password"
-              autoComplete="new-password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-            />
-          </Campo>
-          <Campo>
-            Repita a nova senha
-            <Entrada
-              type="password"
-              autoComplete="new-password"
-              value={senhaRepetida}
-              onChange={(e) => setSenhaRepetida(e.target.value)}
-            />
-          </Campo>
-          <Botao type="submit" disabled={ocupado}>
-            Trocar senha
-          </Botao>
-        </Formulario>
+          <Divisor />
 
-        <LinhaAlternativa>
-          <Link to="/home">Voltar</Link>
-        </LinhaAlternativa>
-      </Card>
-    </Shell>
+          <Formulario onSubmit={(e) => void trocarSenha(e)}>
+            <Kicker>Segurança</Kicker>
+            <Note>
+              Se você entrou com a senha padrão distribuída pelo organizador, troque agora por uma
+              só sua.
+            </Note>
+            <Campo>
+              Nova senha
+              <Entrada
+                type="password"
+                autoComplete="new-password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+              />
+            </Campo>
+            <Campo>
+              Repita a nova senha
+              <Entrada
+                type="password"
+                autoComplete="new-password"
+                value={senhaRepetida}
+                onChange={(e) => setSenhaRepetida(e.target.value)}
+              />
+            </Campo>
+            <Botao type="submit" disabled={ocupado}>
+              Trocar senha
+            </Botao>
+          </Formulario>
+
+          <LinhaAlternativa>
+            <Link to="/home">Voltar</Link>
+          </LinhaAlternativa>
+        </Card>
+      </Shell>
+    </>
   )
 }

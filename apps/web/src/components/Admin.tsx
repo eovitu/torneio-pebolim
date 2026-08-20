@@ -14,7 +14,7 @@ import { usePapeis } from '../auth/usePapeis'
 import { Card, Kicker, Note, Shell } from './Shell'
 
 export const Painel = styled.main`
-  min-height: 100dvh;
+  flex: 1;
   width: 100%;
   max-width: ${({ theme }) => theme.layout.contentMaxWidth};
   margin: 0 auto;

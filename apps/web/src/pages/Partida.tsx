@@ -31,9 +31,10 @@ import { paraRelogioDoDominio } from '../partida/adaptadores'
 import { useRelogioServidor } from '../partida/useRelogioServidor'
 import { Alerta, Botao, BotaoSecundario } from '../components/Formulario'
 import { Kicker, Note } from '../components/Shell'
+import { Navegacao } from '../components/Navegacao'
 
 const Tela = styled.main`
-  min-height: 100dvh;
+  flex: 1;
   max-width: ${({ theme }) => theme.layout.appMaxWidth};
   margin: 0 auto;
   padding: ${({ theme }) => theme.space[4]};
@@ -391,115 +392,120 @@ export default function Partida() {
   }
 
   return (
-    <Tela>
-      <div>
-        <Kicker>{partida.label}</Kicker>
-        <Faixa>
-          {partida.phase_kind === 'GROUP' ? 'Fase de grupos' : 'Mata-mata'} · {partida.status}
-        </Faixa>
-      </div>
+    <>
+      <Navegacao />
+      <Tela>
+        <div>
+          <Kicker>{partida.label}</Kicker>
+          <Faixa>
+            {partida.phase_kind === 'GROUP' ? 'Fase de grupos' : 'Mata-mata'} · {partida.status}
+          </Faixa>
+        </div>
 
-      <Placar>
-        <LadoDoPlacar>
-          <h2>{equipeA.nome}</h2>
-          <Numero>{placar.teamA.gf}</Numero>
-        </LadoDoPlacar>
-        <span>×</span>
-        <LadoDoPlacar>
-          <h2>{equipeB.nome}</h2>
-          <Numero>{placar.teamB.gf}</Numero>
-        </LadoDoPlacar>
-      </Placar>
+        <Placar>
+          <LadoDoPlacar>
+            <h2>{equipeA.nome}</h2>
+            <Numero>{placar.teamA.gf}</Numero>
+          </LadoDoPlacar>
+          <span>×</span>
+          <LadoDoPlacar>
+            <h2>{equipeB.nome}</h2>
+            <Numero>{placar.teamB.gf}</Numero>
+          </LadoDoPlacar>
+        </Placar>
 
-      <Cronometro $ouro={emOuro} $esgotado={tempoEsgotado}>
-        {emOuro && <Faixa $destaque>Gol de ouro</Faixa>}
-        {tempoEsgotado && <Faixa $destaque>Tempo esgotado</Faixa>}
-        <p>
-          {emOuro ? '+' : ''}
-          {tempo}
-        </p>
-        {!relogioPronto && <Detalhe>sincronizando relógio…</Detalhe>}
-      </Cronometro>
+        <Cronometro $ouro={emOuro} $esgotado={tempoEsgotado}>
+          {emOuro && <Faixa $destaque>Gol de ouro</Faixa>}
+          {tempoEsgotado && <Faixa $destaque>Tempo esgotado</Faixa>}
+          <p>
+            {emOuro ? '+' : ''}
+            {tempo}
+          </p>
+          {!relogioPronto && <Detalhe>sincronizando relógio…</Detalhe>}
+        </Cronometro>
 
-      {erroAcao !== null && <Alerta>{erroAcao}</Alerta>}
+        {erroAcao !== null && <Alerta>{erroAcao}</Alerta>}
 
-      {partida.status === 'SCHEDULED' && podeIniciar && (
-        <Botao
-          type="button"
-          disabled={ocupado}
-          onClick={() => void executar(() => supabase.rpc('iniciar_partida', { p_match_id: partida.id }))}
-        >
-          Iniciar partida
-        </Botao>
-      )}
-
-      {podeOperar && (partida.status === 'LIVE' || emOuro || partida.status === 'PAUSED') && (
-        <Controles>
-          {partida.status === 'PAUSED' ? (
-            <Botao
-              type="button"
-              disabled={ocupado}
-              onClick={() =>
-                void executar(() => supabase.rpc('retomar_partida', { p_match_id: partida.id }))
-              }
-            >
-              Retomar
-            </Botao>
-          ) : (
-            <BotaoSecundario
-              type="button"
-              disabled={ocupado}
-              onClick={() =>
-                void executar(() => supabase.rpc('pausar_partida', { p_match_id: partida.id }))
-              }
-            >
-              Pausar
-            </BotaoSecundario>
-          )}
+        {partida.status === 'SCHEDULED' && podeIniciar && (
           <Botao
             type="button"
             disabled={ocupado}
             onClick={() =>
-              void executar(() => supabase.rpc('encerrar_partida', { p_match_id: partida.id }))
+              void executar(() => supabase.rpc('iniciar_partida', { p_match_id: partida.id }))
             }
           >
-            Encerrar
+            Iniciar partida
           </Botao>
-        </Controles>
-      )}
+        )}
 
-      {partida.status !== 'SCHEDULED' && partida.status !== 'FINISHED' && (
-        <Times>
-          {painel(equipeA, 'A')}
-          {painel(equipeB, 'B')}
-        </Times>
-      )}
+        {podeOperar && (partida.status === 'LIVE' || emOuro || partida.status === 'PAUSED') && (
+          <Controles>
+            {partida.status === 'PAUSED' ? (
+              <Botao
+                type="button"
+                disabled={ocupado}
+                onClick={() =>
+                  void executar(() => supabase.rpc('retomar_partida', { p_match_id: partida.id }))
+                }
+              >
+                Retomar
+              </Botao>
+            ) : (
+              <BotaoSecundario
+                type="button"
+                disabled={ocupado}
+                onClick={() =>
+                  void executar(() => supabase.rpc('pausar_partida', { p_match_id: partida.id }))
+                }
+              >
+                Pausar
+              </BotaoSecundario>
+            )}
+            <Botao
+              type="button"
+              disabled={ocupado}
+              onClick={() =>
+                void executar(() => supabase.rpc('encerrar_partida', { p_match_id: partida.id }))
+              }
+            >
+              Encerrar
+            </Botao>
+          </Controles>
+        )}
 
-      {!podeOperar && partida.status !== 'FINISHED' && (
-        <Note>Você está acompanhando como espectador.</Note>
-      )}
+        {partida.status !== 'SCHEDULED' && partida.status !== 'FINISHED' && (
+          <Times>
+            {painel(equipeA, 'A')}
+            {painel(equipeB, 'B')}
+          </Times>
+        )}
 
-      <section>
-        <Faixa>Eventos</Faixa>
-        <Feed>
-          {[...linhasDeEvento].reverse().map((e) => {
-            const removido = linhasDeEvento.some(
-              (r) => r.type === 'GOAL_REMOVED' && r.removed_event_id === e.id,
-            )
-            const autor = escalacao.find((l) => l.player_id === e.player_id)?.jogador.nome
-            const texto = `${ROTULO_EVENTO[e.type] ?? e.type}${autor ? ` — ${autor}` : ''}`
-            return (
-              <li key={e.id}>
-                {removido ? <Riscado>{texto}</Riscado> : <span>{texto}</span>}
-                <span>{formatClock(Math.min(e.clock_ms, MATCH_DURATION_MS))}</span>
-              </li>
-            )
-          })}
-        </Feed>
-        {linhasDeEvento.length === 0 && <Note>Nada aconteceu ainda.</Note>}
-      </section>
+        {!podeOperar && partida.status !== 'FINISHED' && (
+          <Note>Você está acompanhando como espectador.</Note>
+        )}
 
-      <Link to="/home">Voltar</Link>
-    </Tela>
+        <section>
+          <Faixa>Eventos</Faixa>
+          <Feed>
+            {[...linhasDeEvento].reverse().map((e) => {
+              const removido = linhasDeEvento.some(
+                (r) => r.type === 'GOAL_REMOVED' && r.removed_event_id === e.id,
+              )
+              const autor = escalacao.find((l) => l.player_id === e.player_id)?.jogador.nome
+              const texto = `${ROTULO_EVENTO[e.type] ?? e.type}${autor ? ` — ${autor}` : ''}`
+              return (
+                <li key={e.id}>
+                  {removido ? <Riscado>{texto}</Riscado> : <span>{texto}</span>}
+                  <span>{formatClock(Math.min(e.clock_ms, MATCH_DURATION_MS))}</span>
+                </li>
+              )
+            })}
+          </Feed>
+          {linhasDeEvento.length === 0 && <Note>Nada aconteceu ainda.</Note>}
+        </section>
+
+        <Link to="/home">Voltar</Link>
+      </Tela>
+    </>
   )
 }

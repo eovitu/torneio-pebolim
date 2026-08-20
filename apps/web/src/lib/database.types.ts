@@ -573,6 +573,7 @@ export type Database = {
         Args: { p_match_id: string }
         Returns: Database['public']['Tables']['matches']['Row']
       }
+      excluir_torneio: { Args: { p_tournament_id: string }; Returns: undefined }
       relogio_servidor: { Args: Record<string, never>; Returns: string }
       vincular_jogador_conta: {
         Args: { p_player_id: string; p_user_id: string | null }

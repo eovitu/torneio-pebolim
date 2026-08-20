@@ -7,7 +7,9 @@
 import styled from 'styled-components'
 
 export const Shell = styled.main`
-  min-height: 100dvh;
+  /* Cresce dentro do #root em vez de fixar a altura da janela: assim a barra
+     de navegação empilha acima sem provocar rolagem desnecessária. */
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
