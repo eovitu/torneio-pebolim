@@ -365,12 +365,6 @@ export function CartaoDeTorneio({
           <dt>Equipes</dt>
           <dd>{equipes}</dd>
         </div>
-        <div>
-          <dt>Formato</dt>
-          <dd>
-            {torneio.max_equipes}×{torneio.jogadores_por_equipe}
-          </dd>
-        </div>
       </Numeros>
 
       {acao}

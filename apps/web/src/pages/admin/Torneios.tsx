@@ -87,8 +87,6 @@ export default function Torneios() {
   const [nome, setNome] = useState('')
   const [slug, setSlug] = useState('')
   const [slugManual, setSlugManual] = useState(false)
-  const [maxEquipes, setMaxEquipes] = useState(4)
-  const [porEquipe, setPorEquipe] = useState(2)
   const [ocupado, setOcupado] = useState(false)
   const [erroCriacao, setErroCriacao] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
@@ -104,7 +102,6 @@ export default function Torneios() {
 
   const slugFinal = slugManual ? slug : paraSlug(nome)
   const nomeValido = nome.trim().length >= 2
-  const formatoValido = maxEquipes >= 2 && porEquipe >= 1
 
   const fechar = () => {
     setCriando(false)
@@ -112,8 +109,6 @@ export default function Torneios() {
     setNome('')
     setSlug('')
     setSlugManual(false)
-    setMaxEquipes(4)
-    setPorEquipe(2)
     setErroCriacao(null)
   }
 
@@ -124,8 +119,9 @@ export default function Torneios() {
     const { error } = await supabase.from('tournaments').insert({
       nome: nome.trim(),
       slug: slugFinal,
-      max_equipes: maxEquipes,
-      jogadores_por_equipe: porEquipe,
+      // Não se escolhe formato na criação: as equipes se formam pelo número de
+      // inscritos, com no máximo 2 por equipe. As colunas do schema passam a
+      // REGISTRAR o que o sorteio formou, e são preenchidas por ele.
       rules_version: RULES_VERSION,
       criado_por: user.id,
     })
@@ -258,12 +254,8 @@ export default function Torneios() {
                 Voltar
               </Botao>
             )}
-            {passo < 2 ? (
-              <Botao
-                type="button"
-                disabled={passo === 0 ? !nomeValido : !formatoValido}
-                onClick={() => setPasso(passo + 1)}
-              >
+            {passo < 1 ? (
+              <Botao type="button" disabled={!nomeValido} onClick={() => setPasso(passo + 1)}>
                 Continuar
                 <ArrowRight size={16} aria-hidden="true" />
               </Botao>
@@ -275,8 +267,8 @@ export default function Torneios() {
           </Acoes>
         }
       >
-        <Passos aria-label={`Passo ${passo + 1} de 3`}>
-          {[0, 1, 2].map((i) => (
+        <Passos aria-label={`Passo ${passo + 1} de 2`}>
+          {[0, 1].map((i) => (
             <Passo key={i} $ativo={i === passo} $feito={i < passo} />
           ))}
         </Passos>
@@ -285,7 +277,7 @@ export default function Torneios() {
 
         {passo === 0 && (
           <>
-            <Rotulo $cor="acento">Passo 1 de 3</Rotulo>
+            <Rotulo $cor="acento">Passo 1 de 2</Rotulo>
             <h3>Como se chama o campeonato?</h3>
             <Campo>
               Nome do torneio
@@ -314,48 +306,15 @@ export default function Torneios() {
 
         {passo === 1 && (
           <>
-            <Rotulo $cor="acento">Passo 2 de 3</Rotulo>
-            <h3>Qual o formato?</h3>
-            <Campo>
-              Quantas equipes
-              <Entrada
-                type="number"
-                min={2}
-                inputMode="numeric"
-                value={maxEquipes}
-                onChange={(e) => setMaxEquipes(Number(e.target.value))}
-              />
-            </Campo>
-            <Campo>
-              Jogadores por equipe
-              <Entrada
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={porEquipe}
-                onChange={(e) => setPorEquipe(Number(e.target.value))}
-              />
-            </Campo>
-            <Texto $pequeno $mudo>
-              Isto define quantos participantes o sorteio espera ({maxEquipes * porEquipe} pessoas).
-              Não é um teto definitivo: dá para ajustar depois, se aparecer mais gente.
-            </Texto>
-          </>
-        )}
-
-        {passo === 2 && (
-          <>
-            <Rotulo $cor="acento">Passo 3 de 3</Rotulo>
+            <Rotulo $cor="acento">Passo 2 de 2</Rotulo>
             <h3>Tudo certo?</h3>
             <Resumo>
               <dt>Nome</dt>
               <dd>{nome.trim()}</dd>
               <dt>Endereço</dt>
               <dd>/{slugFinal}</dd>
-              <dt>Formato</dt>
-              <dd>
-                {maxEquipes} equipes de {porEquipe} · {maxEquipes * porEquipe} participantes
-              </dd>
+              <dt>Equipes</dt>
+              <dd>formadas pelo número de inscritos, no máximo 2 por equipe</dd>
               <dt>Regras</dt>
               <dd>versão {RULES_VERSION}</dd>
               <dt>Estado inicial</dt>
@@ -363,7 +322,8 @@ export default function Torneios() {
             </Resumo>
             <Texto $pequeno $mudo>
               O torneio nasce com as inscrições abertas: as pessoas já podem entrar sozinhas pela
-              tela de Torneios. Você monta as equipes quando quiser.
+              tela de Torneios. Você sorteia as equipes quando quiser — e pode refazer o sorteio
+              enquanto não houver partida, caso chegue mais gente.
             </Texto>
           </>
         )}

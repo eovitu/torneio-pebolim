@@ -27,10 +27,18 @@ import {
   Plus,
   Settings2,
   Trash2,
+  Undo2,
   UserPlus,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Enums, Tables } from '../../lib/database.types'
+import {
+  MAX_JOGADORES_POR_EQUIPE,
+  MIN_PARTICIPANTES,
+  comporEquipes,
+  descreverComposicao,
+  temEquipeSozinha,
+} from '@pebolim/domain'
 import { ROTULO_STATUS_TORNEIO, descreverErro } from '../../dados/campeonato'
 import { Navegacao } from '../../components/Navegacao'
 import { CartaoDePartida } from '../../components/Cartoes'
@@ -134,9 +142,6 @@ export default function TorneioAdmin() {
   const [tipoFase, setTipoFase] = useState<Enums<'phase_kind'>>('GROUP')
   const [confronto, setConfronto] = useState<Record<string, { a: string; b: string }>>({})
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
-  const [editandoFormato, setEditandoFormato] = useState(false)
-  const [maxEquipes, setMaxEquipes] = useState(4)
-  const [porEquipe, setPorEquipe] = useState(2)
 
   const carregar = useCallback(async () => {
     const [t, p, e, tp, part, f, m, perf] = await Promise.all([
@@ -159,10 +164,6 @@ export default function TorneioAdmin() {
     setFases(f.data ?? [])
     setPartidas(m.data ?? [])
     setPerfis(perf.data ?? [])
-    if (t.data !== null) {
-      setMaxEquipes(t.data.max_equipes)
-      setPorEquipe(t.data.jogadores_por_equipe)
-    }
     setCarregando(false)
   }, [id])
 
@@ -203,10 +204,16 @@ export default function TorneioAdmin() {
     [carregar],
   )
 
-  const totalExigido = useMemo(
-    () => (torneio === null ? 0 : torneio.max_equipes * torneio.jogadores_por_equipe),
-    [torneio],
-  )
+  /**
+   * Composição derivada do número de inscritos.
+   *
+   * A mesma função que o banco espelha em `composicao_de_equipes`. A tela só
+   * mostra a prévia; quem forma as equipes de fato é o servidor (§45).
+   */
+  const composicaoAtual = useMemo(() => {
+    if (participantes.length < MIN_PARTICIPANTES) return null
+    return comporEquipes(participantes.length)
+  }, [participantes.length])
 
   const nomeDe = useCallback(
     (teamId: string) => equipes.find((e) => e.id === teamId)?.nome ?? '—',
@@ -262,7 +269,9 @@ export default function TorneioAdmin() {
           <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
             <Badge $tom="claro">{ROTULO_STATUS_TORNEIO[torneio.status]}</Badge>
             <Badge $tom="claro">
-              {torneio.max_equipes} equipes de {torneio.jogadores_por_equipe}
+              {equipes.length > 0
+                ? `${equipes.length} ${equipes.length === 1 ? 'equipe' : 'equipes'}`
+                : `máx. ${MAX_JOGADORES_POR_EQUIPE} por equipe`}
             </Badge>
             <Badge $tom="claro">regras {torneio.rules_version}</Badge>
           </div>
@@ -354,81 +363,21 @@ export default function TorneioAdmin() {
               <Settings2 size={20} aria-hidden="true" />
               Formato
             </h2>
-            {!editandoFormato && (
-              <Botao
-                type="button"
-                $variante="contorno"
-                $tamanho="sm"
-                onClick={() => setEditandoFormato(true)}
-              >
-                Ajustar
-              </Botao>
-            )}
           </TituloSecao>
           <Cartao>
-            {editandoFormato ? (
-              <Formulario
-                onSubmit={(ev) => {
-                  ev.preventDefault()
-                  void executar(async () => {
-                    const r = await supabase
-                      .from('tournaments')
-                      .update({ max_equipes: maxEquipes, jogadores_por_equipe: porEquipe })
-                      .eq('id', torneio.id)
-                    if (r.error === null) setEditandoFormato(false)
-                    return r
-                  }, 'Formato atualizado.')
-                }}
-              >
-                <Grade2>
-                  <Campo>
-                    Quantas equipes
-                    <Entrada
-                      type="number"
-                      min={2}
-                      inputMode="numeric"
-                      value={maxEquipes}
-                      onChange={(e) => setMaxEquipes(Number(e.target.value))}
-                    />
-                  </Campo>
-                  <Campo>
-                    Jogadores por equipe
-                    <Entrada
-                      type="number"
-                      min={1}
-                      inputMode="numeric"
-                      value={porEquipe}
-                      onChange={(e) => setPorEquipe(Number(e.target.value))}
-                    />
-                  </Campo>
-                </Grade2>
-                <Texto $pequeno $mudo>
-                  O número escolhido na criação não é um teto definitivo: se apareceu mais gente,
-                  aumente aqui e sorteie de novo. Equipes já formadas não são desfeitas por esta
-                  mudança.
-                </Texto>
-                <Acoes>
-                  <Botao type="submit" disabled={ocupado}>
-                    Salvar formato
-                  </Botao>
-                  <Botao
-                    type="button"
-                    $variante="contorno"
-                    onClick={() => {
-                      setEditandoFormato(false)
-                      setMaxEquipes(torneio.max_equipes)
-                      setPorEquipe(torneio.jogadores_por_equipe)
-                    }}
-                  >
-                    Cancelar
-                  </Botao>
-                </Acoes>
-              </Formulario>
-            ) : (
-              <Texto>
-                <strong>{torneio.max_equipes}</strong> equipes de{' '}
-                <strong>{torneio.jogadores_por_equipe}</strong> jogadores ={' '}
-                <strong>{totalExigido}</strong> participantes esperados no sorteio.
+            <Texto>
+              As equipes se formam pelo número de inscritos, com no máximo{' '}
+              <strong>{MAX_JOGADORES_POR_EQUIPE} pessoas por equipe</strong>. Não existe número
+              fixo a atingir: quem chegar, joga.
+            </Texto>
+            <Texto $pequeno $mudo style={{ marginTop: 12 }}>
+              {inscritos.length < MIN_PARTICIPANTES
+                ? `Com ${inscritos.length} inscrito(s) ainda não dá para formar confronto — são necessários ao menos ${MIN_PARTICIPANTES}.`
+                : `Hoje, com ${inscritos.length} inscrito(s): ${descreverComposicao(comporEquipes(inscritos.length))}.`}
+            </Texto>
+            {composicaoAtual !== null && temEquipeSozinha(composicaoAtual) && (
+              <Texto $pequeno $mudo style={{ marginTop: 8 }}>
+                Uma pessoa vai enfrentar duplas sozinha — situação prevista pelas regras.
               </Texto>
             )}
           </Cartao>
@@ -441,9 +390,7 @@ export default function TorneioAdmin() {
               <UserPlus size={20} aria-hidden="true" />
               Participantes
             </h2>
-            <Badge $tom="marca">
-              {inscritos.length} de {totalExigido}
-            </Badge>
+            <Badge $tom="marca">{inscritos.length}</Badge>
           </TituloSecao>
 
           <Cartao>
@@ -642,8 +589,29 @@ export default function TorneioAdmin() {
               {semEquipe.length > 0 && (
                 <Texto $pequeno $mudo style={{ marginTop: 12 }}>
                   {semEquipe.length} inscrito(s) ainda sem equipe:{' '}
-                  {semEquipe.map((j) => j.nome).join(', ')}.
+                  {semEquipe.map((j) => j.nome).join(', ')}. Desfaça o sorteio para incluí-los.
                 </Texto>
+              )}
+
+              {/* Refazer o sorteio virou rotina: chega mais um inscrito e a
+                  divisão inteira muda. Só antes de existir partida. */}
+              {emConfiguracao && partidas.length === 0 && (
+                <Acoes style={{ marginTop: 16 }}>
+                  <Botao
+                    type="button"
+                    $variante="contorno"
+                    disabled={ocupado}
+                    onClick={() =>
+                      void executar(
+                        () => supabase.rpc('desfazer_sorteio', { p_tournament_id: torneio.id }),
+                        'Sorteio desfeito. As inscrições continuam valendo.',
+                      )
+                    }
+                  >
+                    <Undo2 size={16} aria-hidden="true" />
+                    Desfazer sorteio
+                  </Botao>
+                </Acoes>
               )}
             </Cartao>
           ) : !emConfiguracao ? (
@@ -651,7 +619,8 @@ export default function TorneioAdmin() {
           ) : (
             <Cartao>
               <Texto $pequeno $mudo style={{ marginBottom: 16 }}>
-                Selecione {totalExigido} participantes. O sorteio roda no servidor e a semente fica
+                Escolha quem entra no sorteio — por padrão, todos os inscritos. As equipes se
+                formam pelo número de escolhidos. O sorteio roda no servidor e a semente fica
                 registrada na auditoria, para que o resultado possa ser conferido depois.
               </Texto>
 
@@ -700,15 +669,20 @@ export default function TorneioAdmin() {
                     onChange={(e) => setNomesEquipes(e.target.value)}
                   />
                 </Campo>
-                {selecionados.length !== totalExigido && (
+                {selecionados.length < MIN_PARTICIPANTES ? (
                   <Aviso>
-                    {selecionados.length} de {totalExigido} selecionados. O sorteio exige o número
-                    exato — ajuste a seleção ou o formato do torneio.
+                    {selecionados.length} selecionado(s). São necessários ao menos{' '}
+                    {MIN_PARTICIPANTES} para existir um confronto.
+                  </Aviso>
+                ) : (
+                  <Aviso>
+                    {selecionados.length} selecionados ={' '}
+                    {descreverComposicao(comporEquipes(selecionados.length))}.
                   </Aviso>
                 )}
                 <Botao
                   type="submit"
-                  disabled={ocupado || selecionados.length !== totalExigido}
+                  disabled={ocupado || selecionados.length < MIN_PARTICIPANTES}
                   $tamanho="lg"
                 >
                   <Dices size={18} aria-hidden="true" />

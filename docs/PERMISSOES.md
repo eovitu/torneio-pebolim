@@ -30,8 +30,8 @@ montado sobre `players`, e nem e-mail nem data de nascimento saem de lá.
 | Ação | Quem | Onde é validado |
 | --- | --- | --- |
 | Criar/configurar torneio | admin | policy `tournaments_*_admin` |
-| Ajustar equipes × jogadores | admin, **a qualquer momento** | `tournaments_update_admin` (o trigger só guarda `status`) |
 | Sortear equipes | admin | `sortear_equipes` |
+| Desfazer o sorteio | admin, e só sem nenhuma partida | `desfazer_sorteio` |
 | Criar fases / partidas | admin | `phases_*`, `criar_partida_mata_mata`, `gerar_partidas_grupo` |
 | Entrar em um torneio | qualquer conta | `inscrever_se_no_torneio` |
 | Sair de um torneio | a própria pessoa | `sair_do_torneio` |

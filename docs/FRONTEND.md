@@ -152,7 +152,27 @@ Toda tela importante trata quatro estados com as mesmas peças:
 `Carregando` (esqueleto), `Vazio` (com chamada para ação), `Erro`
 (`role="alert"`) e `Sucesso` (`role="status"`).
 
-## 8. Armadilhas já pagas
+## 8. Formação das equipes
+
+Regra do proprietário (20/08/2026): o torneio se divide pelo número de
+inscritos, e não por um total escolhido na criação.
+
+- no máximo **2 pessoas por equipe**;
+- só forma duplas se sobrarem **ao menos duas** — com menos que isso o
+  campeonato inteiro seria uma dupla contra um sozinho, então todos jogam
+  sozinhos;
+- número ímpar com as duplas fechadas deixa **uma equipe de 1**, e isso é
+  permitido.
+
+A fonte de verdade é `comporEquipes` em `packages/domain/src/teams.ts`, coberta
+por teste; `composicao_de_equipes` no banco é o espelho dela, e a interface usa
+a do domínio só para mostrar a prévia antes do sorteio.
+
+`tournaments.max_equipes` e `jogadores_por_equipe` deixaram de ser um alvo a
+atingir: passaram a **registrar** o que o sorteio formou, e são preenchidos por
+ele. A criação de torneio não pergunta mais formato.
+
+## 9. Armadilhas já pagas
 
 Duas coisas quebraram no primeiro uso real e estão travadas por teste:
 
@@ -165,7 +185,7 @@ Duas coisas quebraram no primeiro uso real e estão travadas por teste:
   reexecutava o efeito e devolvia o foco ao diálogo. Callback em efeito de
   ciclo de vida vai por `ref`, não por dependência.
 
-## 9. Acessibilidade
+## 10. Acessibilidade
 
 - alvo de toque mínimo de 48px (`layout.toque`);
 - campos com 16px de fonte, para não disparar o zoom do iOS;
@@ -174,7 +194,7 @@ Duas coisas quebraram no primeiro uso real e estão travadas por teste:
 - nenhuma informação depende só de cor — "ao vivo" tem ponto pulsante **e** a
   palavra escrita; empate sem critério aparece rotulado.
 
-## 10. Performance
+## 11. Performance
 
 - `React.lazy` em todas as rotas fora do caminho de entrada;
 - `manualChunks` separa React, Supabase, styled-components e ícones, para que
@@ -182,7 +202,7 @@ Duas coisas quebraram no primeiro uso real e estão travadas por teste:
 - consultas escopadas por torneio;
 - realtime só onde há motivo.
 
-## 11. Testes
+## 12. Testes
 
 | Arquivo | Cobre |
 | --- | --- |

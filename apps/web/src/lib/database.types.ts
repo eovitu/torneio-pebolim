@@ -594,11 +594,17 @@ export type Database = {
       sortear_equipes: {
         Args: {
           p_nomes_equipes?: string[] | null
-          p_player_ids: string[]
+          /** Ausente ou nulo: sorteia com todos os inscritos do torneio. */
+          p_player_ids?: string[] | null
           p_seed?: number | null
           p_tournament_id: string
         }
         Returns: { equipe: string; jogador: string; player_id: string; team_id: string }[]
+      }
+      desfazer_sorteio: { Args: { p_tournament_id: string }; Returns: undefined }
+      composicao_de_equipes: {
+        Args: { p_total: number }
+        Returns: { duplas: number; solos: number; equipes: number }
       }
       elapsed_ms: {
         Args: { agora: string; m: Database['public']['Tables']['matches']['Row'] }
