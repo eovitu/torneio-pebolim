@@ -25,7 +25,7 @@ import {
   isRegulationOver,
 } from '@pebolim/domain'
 import type { GoalEventType } from '@pebolim/domain'
-import { Minus, Pause, Play, Square, Target, Users, WifiOff } from 'lucide-react'
+import { Minus, Pause, Play, RotateCcw, Square, Target, Users, WifiOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 import { useAuth } from '../auth/useAuth'
@@ -334,6 +334,20 @@ const AvisoConexao = styled.div`
   font-weight: 600;
 `
 
+const SemEscalacao = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: ${({ theme }) => theme.space[2]};
+  padding: ${({ theme }) => theme.space[3]};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  background: ${({ theme }) => theme.color.avisoSuave};
+  color: ${({ theme }) => theme.color.aviso};
+  font-size: ${({ theme }) => theme.fontSize.small};
+  font-weight: 600;
+  text-align: left;
+`
+
 export default function Partida() {
   const { id = '' } = useParams()
   const { user } = useAuth()
@@ -347,6 +361,7 @@ export default function Partida() {
   const [escolhendoContra, setEscolhendoContra] = useState<string | null>(null)
   const [confirmandoInicio, setConfirmandoInicio] = useState(false)
   const [confirmandoFim, setConfirmandoFim] = useState(false)
+  const [confirmandoReset, setConfirmandoReset] = useState(false)
 
   // Apenas para redesenhar o cronômetro. NÃO é a fonte do tempo (§19).
   useEffect(() => {
@@ -475,6 +490,33 @@ export default function Partida() {
       <PainelTime>
         <h3>{equipe.nome}</h3>
 
+        {/*
+          Escalação vazia não é "time sem jogador": é ausência de dado. Sem ela
+          o banco recusa qualquer gol (o autor precisa estar escalado) e a tela
+          ficava só com o botão de gol contra — que abre um modal vazio. Agora
+          o operador vê o que houve, e o administrador conserta na hora.
+        */}
+        {jogadores.length === 0 && (
+          <SemEscalacao role="alert">
+            <span>Esta equipe está sem escalação — nenhum gol pode ser registrado.</span>
+            {ehAdmin && (
+              <Botao
+                type="button"
+                $variante="contorno"
+                $tamanho="sm"
+                disabled={ocupado}
+                onClick={() =>
+                  void executar(() =>
+                    supabase.rpc('ressincronizar_escalacao', { p_match_id: partida.id }),
+                  )
+                }
+              >
+                Refazer escalação
+              </Botao>
+            )}
+          </SemEscalacao>
+        )}
+
         {jogadores.map((l) => (
           <BlocoJogador key={l.player_id}>
             <NomeJogador>
@@ -503,7 +545,7 @@ export default function Partida() {
 
         <BotaoAuxiliar
           type="button"
-          disabled={!golLiberado}
+          disabled={!golLiberado || jogadores.length === 0}
           onClick={() => setEscolhendoContra(equipe.id)}
         >
           GOL CONTRA
@@ -723,6 +765,26 @@ export default function Partida() {
           </Acoes>
         )}
 
+        {/*
+          Saída para a partida que travou. Fica separada dos controles normais
+          de propósito: é um botão que apaga o placar, e não pode dividir área
+          de toque com Pausar e Encerrar (§41).
+        */}
+        {podeOperar && emAndamento && (
+          <Acoes style={{ marginTop: 12 }}>
+            <Botao
+              type="button"
+              $variante="fantasma"
+              $bloco
+              disabled={ocupado}
+              onClick={() => setConfirmandoReset(true)}
+            >
+              <RotateCcw size={16} aria-hidden="true" />
+              Zerar partida
+            </Botao>
+          </Acoes>
+        )}
+
         {podeOperar && emAndamento && (
           <Times>
             {painel(equipeA, 'A')}
@@ -807,6 +869,20 @@ export default function Partida() {
         aoConfirmar={() => {
           setConfirmandoInicio(false)
           void executar(() => supabase.rpc('iniciar_partida', { p_match_id: partida.id }))
+        }}
+      />
+
+      <Confirmacao
+        aberto={confirmandoReset}
+        titulo="Zerar esta partida?"
+        descricao="O cronômetro volta para 03:00, a partida volta a ficar A COMEÇAR e os gols já registrados são anulados. Nada é apagado: cada gol continua no histórico, riscado, com o motivo. Use quando a partida travou ou começou por engano."
+        exigirCiencia="Estou ciente de que o placar atual será anulado."
+        rotuloConfirmar="Zerar agora"
+        ocupado={ocupado}
+        aoCancelar={() => setConfirmandoReset(false)}
+        aoConfirmar={() => {
+          setConfirmandoReset(false)
+          void executar(() => supabase.rpc('resetar_partida', { p_match_id: partida.id }))
         }}
       />
 

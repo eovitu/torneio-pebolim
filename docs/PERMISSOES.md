@@ -41,6 +41,8 @@ montado sobre `players`, e nem e-mail nem data de nascimento saem de lá.
 | Gol / gol de goleiro / gol contra | jogador escalado, juiz ou admin | `registrar_gol` → `is_operador_da_partida` |
 | Remover gol | idem | `remover_gol` |
 | Pausar / retomar / encerrar | idem | RPCs correspondentes |
+| **Zerar a partida** | idem | `resetar_partida` |
+| Refazer a escalação de uma partida | admin | `ressincronizar_escalacao` |
 | Personalizar time (nome, descrição, cor, escudo) | admin **ou quem joga naquele time** | `teams_update_admin_ou_integrante` + grant por coluna |
 | Editar perfil / trocar senha | a própria pessoa | `profiles_update_proprio`, Supabase Auth |
 | Trocar foto | a própria pessoa | policy do Storage por pasta = `auth.uid()` |
@@ -52,6 +54,11 @@ Em `teams`, a policy decide QUAIS linhas cada um altera e o grant por coluna
 decide QUAIS campos: só `nome`, `descricao`, `logo_url` e `cor_primaria` são
 graváveis pelo cliente. Sem o grant, uma policy de UPDATE deixaria mexer em
 `tournament_id` e mudar a equipe de campeonato — RLS não filtra coluna.
+
+`tournament_participants` tem policy **e** grant de INSERT/DELETE. Faltava o
+grant até 20/08/2026, e sem ele a policy nunca chegava a ser consultada: o
+Postgres barra pela falta de privilégio antes de olhar a RLS. Era isso que
+fazia a inscrição pelo painel de administração não gravar.
 
 `matches` não tem policy de UPDATE para ninguém: status e relógio mudam
 exclusivamente pelas RPCs, com `now()` do servidor. `match_events` é
@@ -143,3 +150,34 @@ registro.
 - se um torneio pode ser excluído — `excluir_torneio` conta as partidas;
 - se você pode editar aquele time — `teams_update_admin_ou_integrante`;
 - qual o placar — os eventos, sempre.
+
+## 9. Escalação da partida
+
+`match_lineups` sustenta três coisas ao mesmo tempo: os botões de gol por
+jogador, `validar_evento` (o autor precisa estar escalado NAQUELA equipe) e
+`is_operador_da_partida` (quem joga pode operar). Uma partida sem escalação não
+aceita gol nenhum, e a tela ficava só com o botão de gol contra — que abre um
+modal vazio.
+
+Passou a haver garantia em três pontos:
+
+- `garantir_escalacao` preenche a escalação quando ela está **vazia** — nunca
+  quando é parcial, porque escalação parcial pode ser um retrato legítimo e
+  partida encerrada é imutável;
+- `iniciar_partida` chama essa garantia antes de soltar o relógio, e recusa
+  começar se as equipes realmente não tiverem jogadores;
+- `ressincronizar_escalacao` é a intervenção do administrador para uma partida
+  já em curso, e fica na auditoria.
+
+## 10. Zerar a partida
+
+Decisão do proprietário (20/08/2026): a partida que travou volta ao início.
+
+`resetar_partida` devolve a partida a AGENDADA, zera o relógio e **anula** os
+gols já registrados — cada um recebe um `GOAL_REMOVED` com o motivo "Partida
+zerada". Nada é apagado (§29/§51): o histórico continua inteiro, riscado.
+
+Quem pode é quem opera a partida (`is_operador_da_partida`), e não só o
+administrador — quem está com o celular na mão é quem precisa da saída.
+Partida ENCERRADA não é zerada por aqui: o resultado já valeu para a
+classificação, e desfazê-lo é correção administrativa.

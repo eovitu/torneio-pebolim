@@ -706,6 +706,11 @@ export type Database = {
         Returns: undefined
       }
       sincronizar_escalacao: { Args: { p_match_id: string }; Returns: undefined }
+      ressincronizar_escalacao: { Args: { p_match_id: string }; Returns: number }
+      resetar_partida: {
+        Args: { p_match_id: string }
+        Returns: Database['public']['Tables']['matches']['Row']
+      }
     }
     Enums: {
       app_role: 'PLAYER' | 'ADMIN' | 'FACTORY_ADMIN'
