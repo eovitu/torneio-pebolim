@@ -143,7 +143,7 @@ export function ModalRegras({ onCancelar, onAceitar }: Props) {
           <p>Versão {RULES_VERSION}</p>
         </Cabecalho>
 
-        <Corpo ref={corpoRef} onScroll={verificarRolagem} tabIndex={0}>
+        <Corpo ref={corpoRef} onScroll={verificarRolagem} tabIndex={0} data-testid="regras-corpo">
           {RULES.map((secao) => (
             <section key={secao.id}>
               <h3>{secao.title}</h3>
