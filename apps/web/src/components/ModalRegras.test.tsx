@@ -48,7 +48,9 @@ describe('modal de regras', () => {
       expect(screen.getByText(secao.title)).toBeInTheDocument()
     }
     // Uma regra que não pode faltar: o valor do gol de goleiro.
-    expect(screen.getByText(/gol de goleiro vale 2 — sempre, em placar, saldo/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/gol de goleiro vale 2 — sempre, em placar, saldo/i),
+    ).toBeInTheDocument()
   })
 
   it('mantém o aceite bloqueado enquanto o texto não foi lido até o fim', () => {

@@ -130,7 +130,7 @@ export default function Torneio() {
       <Painel>
         <Note>Torneio não encontrado.</Note>
         <LinhaAlternativa>
-          <Link to="/admin/torneios">Voltar</Link>
+          <Link to="/admin/tournaments">Voltar</Link>
         </LinhaAlternativa>
       </Painel>
     )
@@ -252,9 +252,7 @@ export default function Torneio() {
                       checked={selecionados.includes(j.id)}
                       onChange={(ev) =>
                         setSelecionados((atual) =>
-                          ev.target.checked
-                            ? [...atual, j.id]
-                            : atual.filter((x) => x !== j.id),
+                          ev.target.checked ? [...atual, j.id] : atual.filter((x) => x !== j.id),
                         )
                       }
                     />{' '}
@@ -433,7 +431,9 @@ export default function Torneio() {
                 <BotaoSecundario
                   type="button"
                   disabled={ocupado}
-                  onClick={() => void executar(() => supabase.rpc('encerrar_fase', { p_phase_id: f.id }))}
+                  onClick={() =>
+                    void executar(() => supabase.rpc('encerrar_fase', { p_phase_id: f.id }))
+                  }
                 >
                   Encerrar {f.nome}
                 </BotaoSecundario>
@@ -446,7 +446,7 @@ export default function Torneio() {
       </Secao>
 
       <LinhaAlternativa>
-        <Link to="/admin/torneios">Voltar para a lista</Link>
+        <Link to="/admin/tournaments">Voltar para a lista</Link>
       </LinhaAlternativa>
     </Painel>
   )

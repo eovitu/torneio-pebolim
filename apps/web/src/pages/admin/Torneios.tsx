@@ -157,7 +157,7 @@ export default function Torneios() {
           <Itens>
             {torneios.map((t) => (
               <li key={t.id}>
-                <Link to={`/admin/torneios/${t.id}`}>{t.nome}</Link>
+                <Link to={`/admin/tournaments/${t.id}`}>{t.nome}</Link>
                 <Etiqueta>
                   {t.status} · {t.max_equipes}×{t.jogadores_por_equipe}
                 </Etiqueta>
@@ -166,7 +166,7 @@ export default function Torneios() {
           </Itens>
         )}
         <LinhaAlternativa>
-          <Link to="/">Voltar para a home</Link>
+          <Link to="/home">Voltar para a home</Link>
         </LinhaAlternativa>
       </Secao>
     </Painel>

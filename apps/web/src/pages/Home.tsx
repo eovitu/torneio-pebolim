@@ -29,7 +29,7 @@ export default function Home() {
               </Note>
               {ehAdmin && (
                 <LinhaAlternativa>
-                  <Link to="/admin/torneios">Administrar torneios</Link>
+                  <Link to="/admin/tournaments">Administrar torneios</Link>
                 </LinhaAlternativa>
               )}
               <Botao type="button" onClick={() => void sair()}>
@@ -38,7 +38,7 @@ export default function Home() {
             </>
           ) : (
             <LinhaAlternativa>
-              <Link to="/entrar">Entrar</Link> ou <Link to="/cadastro">criar conta</Link>.
+              <Link to="/login">Entrar</Link> ou <Link to="/register">criar conta</Link>.
             </LinhaAlternativa>
           )}
         </Formulario>

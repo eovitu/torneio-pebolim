@@ -71,7 +71,7 @@ export default function Cadastro() {
     formState: { errors, isSubmitting },
   } = useForm<CamposCadastro>({ defaultValues: { nome: '', email: '', senha: '' } })
 
-  if (!carregando && session !== null) return <Navigate to="/" replace />
+  if (!carregando && session !== null) return <Navigate to="/home" replace />
 
   const aoEnviar = handleSubmit(async ({ nome, email, senha }) => {
     setErro(null)
@@ -87,7 +87,7 @@ export default function Cadastro() {
         versaoRegrasAceita: versaoAceita,
       })
       if (precisaConfirmarEmail) setConfirmeEmail(true)
-      else navigate('/', { replace: true })
+      else navigate('/home', { replace: true })
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível concluir o cadastro.')
     }
@@ -105,7 +105,7 @@ export default function Cadastro() {
           </Note>
           <Formulario as="div">
             <LinhaAlternativa>
-              Já confirmou? <Link to="/entrar">Entrar</Link>
+              Já confirmou? <Link to="/login">Entrar</Link>
             </LinhaAlternativa>
           </Formulario>
         </Card>
@@ -191,7 +191,7 @@ export default function Cadastro() {
           </Botao>
 
           <LinhaAlternativa>
-            Já tem conta? <Link to="/entrar">Entrar</Link>
+            Já tem conta? <Link to="/login">Entrar</Link>
           </LinhaAlternativa>
         </Formulario>
       </Card>

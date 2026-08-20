@@ -86,7 +86,7 @@ export function RotaAdmin({ children }: { children: ReactNode }) {
     )
   }
 
-  if (session === null) return <Navigate to="/entrar" replace />
+  if (session === null) return <Navigate to="/login" replace />
 
   if (!ehAdmin) {
     return (
@@ -96,7 +96,7 @@ export function RotaAdmin({ children }: { children: ReactNode }) {
           <h1>Área administrativa</h1>
           <Note>Sua conta não tem permissão de administrador.</Note>
           <Note>
-            <Link to="/">Voltar para a home</Link>
+            <Link to="/home">Voltar para a home</Link>
           </Note>
         </Card>
       </Shell>

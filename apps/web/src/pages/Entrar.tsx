@@ -29,14 +29,13 @@ export default function Entrar() {
     formState: { errors, isSubmitting },
   } = useForm<CamposLogin>({ defaultValues: { email: '', senha: '' } })
 
-  if (!carregando && session !== null) return <Navigate to="/" replace />
-
+  if (!carregando && session !== null) return <Navigate to="/home" replace />
 
   const aoEnviar = handleSubmit(async ({ email, senha }) => {
     setErro(null)
     try {
       await entrar(email.trim(), senha)
-      navigate('/', { replace: true })
+      navigate('/home', { replace: true })
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível entrar.')
     }
@@ -80,7 +79,7 @@ export default function Entrar() {
           </Botao>
 
           <LinhaAlternativa>
-            Ainda não tem conta? <Link to="/cadastro">Cadastre-se</Link>
+            Ainda não tem conta? <Link to="/register">Cadastre-se</Link>
           </LinhaAlternativa>
         </Formulario>
       </Card>
