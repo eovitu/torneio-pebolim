@@ -34,7 +34,7 @@ import type { Enums, Tables } from '../../lib/database.types'
 import { ROTULO_STATUS_TORNEIO, descreverErro } from '../../dados/campeonato'
 import { Navegacao } from '../../components/Navegacao'
 import { CartaoDePartida } from '../../components/Cartoes'
-import { Bloco, Cartao, Pagina, Painel, Rotulo, Texto, TituloSecao } from '../../ui/Superficie'
+import { Bloco, Cartao, Divisor, Pagina, Painel, Rotulo, Texto, TituloSecao } from '../../ui/Superficie'
 import { Acoes, Botao, BotaoLink } from '../../ui/Botao'
 import { Carregando, Erro, Sucesso, Vazio, Aviso } from '../../ui/Estados'
 import { Avatar, Badge } from '../../ui/Etiqueta'
@@ -249,6 +249,8 @@ export default function TorneioAdmin() {
     return j === undefined ? [] : [{ ...j, autoInscrito: p.auto_inscrito }]
   })
   const semEquipe = inscritos.filter((j) => !elencos.some((l) => l.player_id === j.id))
+  const idsInscritos = new Set(participantes.map((p) => p.player_id))
+  const jaCadastrados = jogadores.filter((j) => !idsInscritos.has(j.id))
 
   return (
     <>
@@ -500,18 +502,20 @@ export default function TorneioAdmin() {
                   const nome = nomeJogador.trim()
                   if (nome.length < 2) return
                   void executar(async () => {
-                    const r = await supabase
+                    const criado = await supabase
                       .from('players')
                       .insert({ nome })
                       .select('id')
                       .maybeSingle()
-                    if (r.error === null && r.data !== null) {
-                      await supabase
-                        .from('tournament_participants')
-                        .insert({ tournament_id: torneio.id, player_id: r.data.id })
-                    }
+                    if (criado.error !== null || criado.data === null) return criado
+                    // Devolver o resultado da INSCRIÇÃO, e não o da criação do
+                    // jogador: antes, uma falha aqui passava calada e a pessoa
+                    // aparecia cadastrada mas fora do torneio.
+                    const inscrito = await supabase
+                      .from('tournament_participants')
+                      .insert({ tournament_id: torneio.id, player_id: criado.data.id })
                     setNomeJogador('')
-                    return r
+                    return inscrito
                   }, `${nome} foi inscrito.`)
                 }}
               >
@@ -528,6 +532,44 @@ export default function TorneioAdmin() {
                   Inscrever participante
                 </Botao>
               </Formulario>
+            )}
+
+            {emConfiguracao && jaCadastrados.length > 0 && (
+              <>
+                <Divisor />
+                <h3 style={{ marginBottom: 8 }}>Já cadastrados</h3>
+                <Texto $pequeno $mudo style={{ marginBottom: 12 }}>
+                  Jogadores que existem no sistema mas ainda não estão neste torneio — de outro
+                  campeonato, ou de um que foi excluído. Inscreva aqui em vez de cadastrar de novo,
+                  para o histórico da pessoa continuar sendo um só.
+                </Texto>
+                <ListaSelecao>
+                  {jaCadastrados.map((j) => (
+                    <LinhaLista key={j.id}>
+                      <Avatar nome={j.nome} url={j.foto_url} tamanho="xs" />
+                      <span>{j.nome}</span>
+                      <Botao
+                        type="button"
+                        $variante="contorno"
+                        $tamanho="sm"
+                        disabled={ocupado}
+                        onClick={() =>
+                          void executar(
+                            () =>
+                              supabase
+                                .from('tournament_participants')
+                                .insert({ tournament_id: torneio.id, player_id: j.id }),
+                            `${j.nome} foi inscrito.`,
+                          )
+                        }
+                      >
+                        <Plus size={14} aria-hidden="true" />
+                        Inscrever
+                      </Botao>
+                    </LinhaLista>
+                  ))}
+                </ListaSelecao>
+              </>
             )}
           </Cartao>
 
