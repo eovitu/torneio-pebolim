@@ -1,40 +1,48 @@
 /**
- * Moldura visual compartilhada pelas páginas: coluna central, cartão de régua
- * de 2px e os textos auxiliares. Todos os valores vêm dos tokens — nenhuma
- * cor, espaçamento ou medida é escrita à mão aqui.
+ * Moldura das telas de foco único (entrar, cadastrar, 404).
+ *
+ * Mantida com os mesmos nomes de antes para não obrigar uma reescrita das
+ * telas de autenticação; o que mudou foi só a linguagem visual, que agora vem
+ * dos tokens novos.
  */
 
 import styled from 'styled-components'
 
 export const Shell = styled.main`
-  /* Cresce dentro do #root em vez de fixar a altura da janela: assim a barra
-     de navegação empilha acima sem provocar rolagem desnecessária. */
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: ${({ theme }) => theme.space[6]};
+  padding: ${({ theme }) => theme.space[5]};
+  padding-bottom: calc(${({ theme }) => theme.layout.barraMobile} + ${({ theme }) => theme.space[6]});
 `
 
 export const Card = styled.section`
   width: 100%;
   max-width: ${({ theme }) => theme.layout.appMaxWidth};
-  border: 2px solid ${({ theme }) => theme.color.divider};
+  background: ${({ theme }) => theme.color.surface};
+  border: 1px solid ${({ theme }) => theme.color.borderSoft};
+  border-radius: ${({ theme }) => theme.radius.lg};
+  box-shadow: ${({ theme }) => theme.shadow.sm};
   padding: ${({ theme }) => theme.space[6]};
-  background: ${({ theme }) => theme.color.neutral[100]};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.space[4]};
+  animation: pb-surgir ${({ theme }) => theme.motion.lento} ${({ theme }) => theme.motion.entrada}
+    both;
 `
 
 export const Kicker = styled.p`
   margin: 0;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
+  font-size: ${({ theme }) => theme.fontSize.micro};
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: ${({ theme }) => theme.color.accent};
 `
 
 export const Note = styled.p`
-  margin: ${({ theme }) => theme.space[3]} 0 0;
-  font-size: 13px;
+  margin: 0;
+  font-size: ${({ theme }) => theme.fontSize.small};
   color: ${({ theme }) => theme.color.muted};
 `

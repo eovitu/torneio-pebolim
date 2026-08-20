@@ -1,123 +1,181 @@
 /**
- * Peças de formulário. Estilo mínimo, só o suficiente para ser legível e
- * utilizável no celular — a linguagem visual definitiva virá do protótipo em
- * `project/`. Todos os valores saem dos tokens (§42).
+ * Peças de formulário.
+ *
+ * O botão vive em `ui/Botao` — aqui só é reexportado para que as telas antigas
+ * continuem importando do mesmo lugar. Existe uma única implementação de
+ * botão no produto (§19 do redesign).
+ *
+ * Campos têm 48px de altura e fonte de 16px: alvo confortável para o dedo e
+ * sem o zoom automático do iOS ao focar (§43).
  */
 
 import styled from 'styled-components'
+import { Botao } from '../ui/Botao'
+import { Erro as CaixaErro, Aviso as CaixaAviso } from '../ui/Estados'
+
+export { Botao }
+export type { VarianteBotao, TamanhoBotao } from '../ui/Botao'
+
+/** Compatibilidade: era o botão "de contorno" das telas antigas. */
+export const BotaoSecundario = styled(Botao).attrs({ $variante: 'contorno' as const })``
 
 export const Formulario = styled.form`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space[4]};
-  margin-top: ${({ theme }) => theme.space[6]};
 `
 
 export const Campo = styled.label`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.space[1]};
-  font-size: 11px;
+  gap: ${({ theme }) => theme.space[2]};
+  font-size: ${({ theme }) => theme.fontSize.small};
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: ${({ theme }) => theme.color.muted};
+  color: ${({ theme }) => theme.color.textSoft};
+`
+
+const baseControle = `
+  font: inherit;
+  font-size: 16px;
+  width: 100%;
+  min-height: 48px;
 `
 
 export const Entrada = styled.input`
-  /* 16px evita o zoom automático do iOS ao focar o campo (§43). */
-  font: inherit;
-  font-size: 16px;
-  text-transform: none;
-  letter-spacing: normal;
+  ${baseControle}
   color: ${({ theme }) => theme.color.text};
-  background: ${({ theme }) => theme.color.neutral[100]};
-  border: 2px solid ${({ theme }) => theme.color.divider};
-  padding: ${({ theme }) => theme.space[3]};
-  /* Alvo de toque confortável. */
-  min-height: 48px;
+  background: ${({ theme }) => theme.color.surface};
+  border: 1px solid ${({ theme }) => theme.color.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  padding: 0 ${({ theme }) => theme.space[4]};
+  transition:
+    border-color ${({ theme }) => theme.motion.rapido} ease,
+    box-shadow ${({ theme }) => theme.motion.rapido} ease;
 
-  &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.color.accent};
-    outline-offset: 2px;
+  &::placeholder {
+    color: ${({ theme }) => theme.color.muted};
+  }
+
+  &:hover:not(:disabled) {
+    border-color: ${({ theme }) => theme.color.borderStrong};
+  }
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.color.accent};
+    box-shadow: ${({ theme }) => theme.shadow.foco};
   }
 
   &:disabled {
     color: ${({ theme }) => theme.color.muted};
-    background: ${({ theme }) => theme.color.surface};
+    background: ${({ theme }) => theme.color.surfaceSunken};
+    cursor: not-allowed;
   }
 `
 
-export const Botao = styled.button`
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  min-height: 52px;
+export const AreaTexto = styled.textarea`
+  ${baseControle}
+  min-height: 104px;
+  resize: vertical;
   padding: ${({ theme }) => theme.space[3]} ${({ theme }) => theme.space[4]};
-  border: 2px solid ${({ theme }) => theme.color.text};
-  background: ${({ theme }) => theme.color.text};
-  color: ${({ theme }) => theme.color.neutral[100]};
+  color: ${({ theme }) => theme.color.text};
+  background: ${({ theme }) => theme.color.surface};
+  border: 1px solid ${({ theme }) => theme.color.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.color.accent};
+    box-shadow: ${({ theme }) => theme.shadow.foco};
+  }
+`
+
+/**
+ * `<select>` estilizado. A seta é desenhada em CSS: um SVG embutido carregaria
+ * um asset só para isso, e o nativo varia demais entre navegadores.
+ */
+export const Selecao = styled.select`
+  ${baseControle}
+  appearance: none;
+  color: ${({ theme }) => theme.color.text};
+  background-color: ${({ theme }) => theme.color.surface};
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 19px) calc(50% + 1px),
+    calc(100% - 13px) calc(50% + 1px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  border: 1px solid ${({ theme }) => theme.color.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  padding: 0 ${({ theme }) => theme.space[8]} 0 ${({ theme }) => theme.space[4]};
   cursor: pointer;
 
-  &:hover:not(:disabled),
-  &:focus-visible:not(:disabled) {
-    background: ${({ theme }) => theme.color.accent};
+  &:focus {
+    outline: none;
     border-color: ${({ theme }) => theme.color.accent};
+    box-shadow: ${({ theme }) => theme.shadow.foco};
   }
 
   &:disabled {
+    color: ${({ theme }) => theme.color.muted};
+    background-color: ${({ theme }) => theme.color.surfaceSunken};
     cursor: not-allowed;
-    background: ${({ theme }) => theme.color.neutral[400]};
-    border-color: ${({ theme }) => theme.color.neutral[400]};
   }
 `
 
-export const BotaoSecundario = styled(Botao)`
-  background: transparent;
-  color: ${({ theme }) => theme.color.text};
-
-  &:hover:not(:disabled),
-  &:focus-visible:not(:disabled) {
-    color: ${({ theme }) => theme.color.neutral[100]};
-  }
-`
-
-/** Erro do formulário inteiro. `role="alert"` faz o leitor de tela anunciar. */
-export const Alerta = styled.p.attrs({ role: 'alert' })`
-  margin: 0;
-  padding: ${({ theme }) => theme.space[3]};
-  border: 2px solid ${({ theme }) => theme.color.accent};
-  background: ${({ theme }) => theme.color.accentRamp[100]};
-  color: ${({ theme }) => theme.color.accentRamp[700]};
-  font-size: 13px;
-`
-
-export const Aviso = styled.p`
-  margin: 0;
-  padding: ${({ theme }) => theme.space[3]};
-  border: 2px solid ${({ theme }) => theme.color.divider};
+/** Caixa de marcação com alvo grande — o rótulo inteiro é clicável. */
+export const CampoMarcacao = styled.label`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space[3]};
+  min-height: 44px;
+  padding: ${({ theme }) => theme.space[2]} ${({ theme }) => theme.space[3]};
+  border: 1px solid ${({ theme }) => theme.color.borderSoft};
+  border-radius: ${({ theme }) => theme.radius.sm};
   background: ${({ theme }) => theme.color.surface};
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSize.small};
+  cursor: pointer;
+  transition: border-color ${({ theme }) => theme.motion.rapido} ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.color.marcaClara};
+  }
+
+  &:has(input:checked) {
+    border-color: ${({ theme }) => theme.color.accent};
+    background: ${({ theme }) => theme.color.bola[50]};
+  }
+
+  input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: ${({ theme }) => theme.color.accent};
+  }
 `
+
+/** Erro do formulário inteiro. */
+export const Alerta = CaixaErro
+/** Aviso neutro do formulário. */
+export const Aviso = CaixaAviso
 
 /** Erro de um campo específico. */
 export const ErroCampo = styled.span`
-  font-size: 11px;
+  display: block;
+  font-size: ${({ theme }) => theme.fontSize.caption};
   font-weight: 500;
-  letter-spacing: normal;
-  text-transform: none;
-  color: ${({ theme }) => theme.color.accentRamp[700]};
+  color: ${({ theme }) => theme.color.perigo};
 `
 
 export const LinhaAlternativa = styled.p`
   margin: 0;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSize.small};
   color: ${({ theme }) => theme.color.muted};
 
   a {
     color: ${({ theme }) => theme.color.accent};
-    font-weight: 600;
+    font-weight: 700;
   }
 `
