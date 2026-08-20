@@ -31,6 +31,8 @@ export function usePartida(matchId: string) {
   const [dados, setDados] = useState<DadosPartida | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
+  /** Canal de realtime de pé. A tela avisa quando cai, em vez de fingir. */
+  const [sincronizado, setSincronizado] = useState(false)
   const buscando = useRef(false)
 
   const buscar = useCallback(async () => {
@@ -104,8 +106,10 @@ export function usePartida(matchId: string) {
         () => void buscar(),
       )
       .subscribe((estado) => {
+        const ok = estado === 'SUBSCRIBED'
+        setSincronizado(ok)
         // Reassinar depois de uma queda pode ter deixado eventos para trás.
-        if (estado === 'SUBSCRIBED') void buscar()
+        if (ok) void buscar()
       })
 
     const aoVoltar = () => {
@@ -118,8 +122,9 @@ export function usePartida(matchId: string) {
       void supabase.removeChannel(canal)
       document.removeEventListener('visibilitychange', aoVoltar)
       window.removeEventListener('online', aoVoltar)
+      setSincronizado(false)
     }
   }, [matchId, buscar])
 
-  return { dados, carregando, erro, recarregar: buscar }
+  return { dados, carregando, erro, recarregar: buscar, sincronizado }
 }
