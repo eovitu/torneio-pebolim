@@ -7,18 +7,19 @@
  * uma nova aqui. Para o jogador, a tela diz claramente com quem falar.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { Palette, Users } from 'lucide-react'
+import { Camera, Palette, Users } from 'lucide-react'
 import { Navegacao } from '../components/Navegacao'
 import { CartaoDePartida, GradeDeNumeros, LinhaDeJogador, Numero } from '../components/Cartoes'
 import { Artilharia } from '../components/Tabelas'
-import { useCampeonato } from '../dados/hooks'
+import { useCampeonato, useMeuJogador } from '../dados/hooks'
 import { ROTULO_STATUS_TORNEIO, descreverErro } from '../dados/campeonato'
 import type { LinhaEquipe } from '../dados/campeonato'
 import { supabase } from '../lib/supabase'
 import { usePapeis } from '../auth/usePapeis'
+import { useAuth } from '../auth/useAuth'
 import { Bloco, Cartao, Pagina, Painel, Rotulo, Texto, TituloSecao } from '../ui/Superficie'
 import { Acoes, Botao, BotaoLink } from '../ui/Botao'
 import { Carregando, Erro, Sucesso, Vazio } from '../ui/Estados'
@@ -57,6 +58,37 @@ const EscudoGrande = styled.div<{ $cor?: string | null }>`
   }
 `
 
+/** Rótulo com cara de botão: `<input type="file">` nativo não se estiliza. */
+const TrocarEscudo = styled.label`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.space[2]};
+  min-height: ${({ theme }) => theme.layout.toque};
+  padding: 0 ${({ theme }) => theme.space[5]};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  border: 2px solid ${({ theme }) => theme.color.border};
+  background: ${({ theme }) => theme.color.surface};
+  color: ${({ theme }) => theme.color.text};
+  font-size: ${({ theme }) => theme.fontSize.small};
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.color.marcaClara};
+    background: ${({ theme }) => theme.color.campo[50]};
+  }
+
+  input {
+    /* Escondido visualmente, mas ainda alcançável pelo teclado. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+`
+
 const Lista = styled.div`
   display: grid;
   gap: ${({ theme }) => theme.space[3]};
@@ -69,6 +101,8 @@ const Lista = styled.div`
 export default function Time() {
   const { id = '' } = useParams()
   const { ehAdmin } = usePapeis()
+  const { user } = useAuth()
+  const { jogador } = useMeuJogador()
 
   const [equipe, setEquipe] = useState<LinhaEquipe | null>(null)
   const [buscandoEquipe, setBuscandoEquipe] = useState(true)
@@ -100,6 +134,7 @@ export default function Time() {
   const [ocupado, setOcupado] = useState(false)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const arquivoRef = useRef<HTMLInputElement>(null)
 
   // Abrir o formulário sempre parte dos valores atuais do time.
   const abrirEdicao = (e: LinhaEquipe) => {
@@ -107,6 +142,62 @@ export default function Time() {
     setDescricao(e.descricao ?? '')
     setCor(e.cor_primaria ?? '#146345')
     setEditando(true)
+  }
+
+  const TIPOS_ACEITOS = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
+  const TAMANHO_MAXIMO = 2 * 1024 * 1024
+
+  /**
+   * Envia o escudo do time.
+   *
+   * O arquivo vai para `avatars/<id do usuário>/time-<id do time>.<ext>`. A
+   * policy do Storage já amarra a escrita à pasta de quem está logado, e o
+   * bucket já é de leitura pública — não é preciso bucket nem policy nova.
+   */
+  const enviarEscudo = async (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = ev.target.files?.[0]
+    if (arquivo === undefined || user === null || equipe === null) return
+    setErroAcao(null)
+    setAviso(null)
+
+    if (!TIPOS_ACEITOS.includes(arquivo.type)) {
+      setErroAcao('Use uma imagem JPEG, PNG, WebP ou AVIF.')
+      return
+    }
+    if (arquivo.size > TAMANHO_MAXIMO) {
+      setErroAcao('A imagem precisa ter no máximo 2 MB.')
+      return
+    }
+
+    setOcupado(true)
+    const extensao = arquivo.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const caminho = `${user.id}/time-${equipe.id}.${extensao}`
+
+    const { error: erroUpload } = await supabase.storage
+      .from('avatars')
+      .upload(caminho, arquivo, { upsert: true, contentType: arquivo.type })
+
+    if (erroUpload !== null) {
+      setOcupado(false)
+      setErroAcao(descreverErro(erroUpload))
+      return
+    }
+
+    const { data: publico } = supabase.storage.from('avatars').getPublicUrl(caminho)
+    // A query no fim força o navegador a buscar de novo depois da troca.
+    const url = `${publico.publicUrl}?v=${Date.now()}`
+
+    const { error } = await supabase.from('teams').update({ logo_url: url }).eq('id', equipe.id)
+    setOcupado(false)
+    if (error !== null) {
+      setErroAcao(descreverErro(error))
+      return
+    }
+    setAviso('Escudo atualizado.')
+    const { data } = await supabase.from('teams').select('*').eq('id', equipe.id).maybeSingle()
+    setEquipe(data)
+    await recarregar()
+    if (arquivoRef.current !== null) arquivoRef.current.value = ''
   }
 
   const salvar = async (ev: React.FormEvent) => {
@@ -167,6 +258,11 @@ export default function Time() {
   }
 
   const stats = campeonato.estatisticasDeEquipe.get(equipe.id)
+  // Espelha a policy `teams_update_admin_ou_integrante`. Esconder o botão é
+  // conveniência: quem barra de fato é a RLS e o grant por coluna (§45).
+  const souDoElenco =
+    jogador !== null && campeonato.elencos.some((l) => l.team_id === equipe.id && l.player_id === jogador.id)
+  const podePersonalizar = ehAdmin || souDoElenco
   const elenco = campeonato.elencos
     .filter((l) => l.team_id === equipe.id)
     .flatMap((l) => {
@@ -303,10 +399,10 @@ export default function Time() {
             </h2>
           </TituloSecao>
 
-          {!ehAdmin ? (
+          {!podePersonalizar ? (
             <Texto $pequeno $mudo>
-              Nome, descrição e cor do time são alterados pelo organizador do campeonato. Fale com
-              ele para mudar a identidade da equipe.
+              A identidade da equipe é definida por quem joga nela e pelo organizador do
+              campeonato.
             </Texto>
           ) : editando ? (
             <Cartao>
@@ -348,6 +444,17 @@ export default function Time() {
                 <Palette size={16} aria-hidden="true" />
                 Personalizar time
               </Botao>
+              <TrocarEscudo>
+                <Camera size={16} aria-hidden="true" />
+                {ocupado ? 'Enviando…' : 'Trocar escudo'}
+                <input
+                  ref={arquivoRef}
+                  type="file"
+                  accept={TIPOS_ACEITOS.join(',')}
+                  disabled={ocupado}
+                  onChange={(e) => void enviarEscudo(e)}
+                />
+              </TrocarEscudo>
             </Acoes>
           )}
         </Bloco>
