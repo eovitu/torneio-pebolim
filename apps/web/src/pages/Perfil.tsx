@@ -10,8 +10,10 @@
  * o avatar vai para uma pasta cujo nome é o id de quem está logado — a policy
  * do Storage não deixa escrever na pasta de outro.
  *
- * A foto é gravada também em `players.foto_url`, que é a tabela pública: é
- * assim que o avatar aparece na artilharia e na escalação sem expor `profiles`.
+ * Nome e foto aparecem publicamente através de `players`, que é a tabela de
+ * leitura pública. Quem copia um para o outro é um gatilho no banco, e não esta
+ * tela: assim quem nunca abriu o perfil também aparece certo na artilharia — foi
+ * exatamente o que faltou no primeiro uso.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -132,12 +134,6 @@ export default function Perfil() {
       })
       .eq('id', user.id)
 
-    // O nome público do jogador acompanha o do perfil — senão a artilharia
-    // continuaria mostrando o nome antigo.
-    if (error === null && jogador !== null) {
-      await supabase.from('players').update({ nome: nome.trim() }).eq('id', jogador.id)
-    }
-
     setOcupado(false)
     if (error !== null) setErro(descreverErro(error))
     else {
@@ -207,10 +203,6 @@ export default function Perfil() {
       .from('profiles')
       .update({ avatar_url: url })
       .eq('id', user.id)
-
-    if (erroPerfil === null && jogador !== null) {
-      await supabase.from('players').update({ foto_url: url }).eq('id', jogador.id)
-    }
 
     setOcupado(false)
     if (erroPerfil !== null) setErro(descreverErro(erroPerfil))
