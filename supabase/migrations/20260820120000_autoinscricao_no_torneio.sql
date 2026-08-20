@@ -186,3 +186,8 @@ create trigger trg_40_participante_do_elenco
   for each row execute function trg_participante_ao_entrar_em_equipe();
 
 grant select on tournament_participants to anon, authenticated;
+
+-- A função de trigger não é uma RPC. Sem este revoke ela fica exposta em
+-- /rest/v1/rpc — chamá-la fora de um trigger só levantaria erro, mas a postura
+-- do projeto é deny-by-default e nenhuma função entra na API sem motivo (§47).
+revoke execute on function trg_participante_ao_entrar_em_equipe() from public, anon, authenticated;
