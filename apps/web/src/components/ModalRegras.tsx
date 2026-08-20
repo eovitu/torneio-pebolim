@@ -15,7 +15,9 @@ import { Botao, BotaoSecundario } from './Formulario'
 const Fundo = styled.div`
   position: fixed;
   inset: 0;
-  z-index: 10;
+  /* Acima da barra de navegacao, que e sticky. Com o valor antigo (10, abaixo
+     dos 20 da barra) o topo do modal ficava coberto pelo cabecalho. */
+  z-index: ${({ theme }) => theme.zIndex.modal};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,6 +36,7 @@ const Caixa = styled.div`
 `
 
 const Cabecalho = styled.header`
+  flex-shrink: 0;
   padding: ${({ theme }) => theme.space[4]};
   border-bottom: 2px solid ${({ theme }) => theme.color.divider};
 
@@ -52,7 +55,14 @@ const Cabecalho = styled.header`
 `
 
 const Corpo = styled.div`
+  /* "min-height: 0" e o que permite este item ENCOLHER dentro do flex. Sem
+     ele o padrao "min-height: auto" impede o encolhimento: a caixa estoura os
+     90dvh, o rodape com o botao sai da tela e nada rola — era impossivel ler
+     ate o fim e aceitar. */
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: ${({ theme }) => theme.space[4]};
   -webkit-overflow-scrolling: touch;
 
@@ -81,6 +91,7 @@ const Corpo = styled.div`
 `
 
 const Rodape = styled.footer`
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space[3]};
@@ -132,7 +143,26 @@ export function ModalRegras({ onCancelar, onAceitar, aviso }: Props) {
     // Se o texto couber inteiro na tela, não existe rolagem a fazer — nesse
     // caso o conteúdo já está todo visível e o botão pode liberar.
     verificarRolagem()
+
+    // Uma medição só, na montagem, não basta: fonte que carrega depois, teclado
+    // que abre e rotação de tela mudam a altura. Sem remedir, a pessoa pode
+    // ficar presa com o botão travado mesmo tendo lido tudo.
+    const el = corpoRef.current
+    if (el === null) return
+    const observador = new ResizeObserver(() => verificarRolagem())
+    observador.observe(el)
+    return () => observador.disconnect()
   }, [verificarRolagem])
+
+  // Trava a rolagem do fundo enquanto o modal está aberto — senão o dedo rola a
+  // página atrás em vez do texto das regras.
+  useEffect(() => {
+    const anterior = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = anterior
+    }
+  }, [])
 
   useEffect(() => {
     if (onCancelar === undefined) return

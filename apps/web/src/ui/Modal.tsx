@@ -53,6 +53,7 @@ const Caixa = styled.div`
 `
 
 const Cabecalho = styled.header`
+  flex-shrink: 0;
   display: flex;
   align-items: flex-start;
   gap: ${({ theme }) => theme.space[3]};
@@ -66,7 +67,12 @@ const Cabecalho = styled.header`
 `
 
 const Corpo = styled.div`
+  /* Ver ModalRegras: sem "min-height: 0" o corpo nao encolhe, a caixa estoura
+     a altura maxima e o rodape sai da tela. */
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: ${({ theme }) => theme.space[5]};
   display: flex;
@@ -75,6 +81,7 @@ const Corpo = styled.div`
 `
 
 const Rodape = styled.footer`
+  flex-shrink: 0;
   padding: ${({ theme }) => theme.space[5]};
   border-top: 1px solid ${({ theme }) => theme.color.borderSoft};
 `
@@ -92,6 +99,15 @@ export function Modal({ aberto, titulo, aoFechar, children, rodape }: PropsModal
   const caixaRef = useRef<HTMLDivElement>(null)
   const focoAnterior = useRef<HTMLElement | null>(null)
 
+  /**
+   * Abertura e fechamento. Depende SÓ de `aberto`, de propósito.
+   *
+   * Antes este efeito dependia também de `aoFechar`. Como quem usa o modal
+   * costuma passar uma função criada no corpo do componente, a identidade dela
+   * muda a cada render — e cada tecla digitada dentro do modal disparava a
+   * limpeza e a reexecução do efeito, jogando o foco de volta no diálogo. No
+   * celular isso fechava o teclado a cada letra.
+   */
   useEffect(() => {
     if (!aberto) return
     focoAnterior.current = document.activeElement as HTMLElement | null
@@ -100,17 +116,25 @@ export function Modal({ aberto, titulo, aoFechar, children, rodape }: PropsModal
     // Foco no diálogo para o leitor de tela anunciar o título.
     caixaRef.current?.focus()
 
-    const aoTeclar = (ev: KeyboardEvent) => {
-      if (ev.key === 'Escape') aoFechar()
-    }
-    document.addEventListener('keydown', aoTeclar)
-
     return () => {
-      document.removeEventListener('keydown', aoTeclar)
       document.body.style.overflow = overflowAnterior
       focoAnterior.current?.focus()
     }
-  }, [aberto, aoFechar])
+  }, [aberto])
+
+  // O Esc fica num efeito próprio, lendo a callback por referência: assim uma
+  // função nova a cada render não reinstala nada nem mexe no foco.
+  const fecharRef = useRef(aoFechar)
+  fecharRef.current = aoFechar
+
+  useEffect(() => {
+    if (!aberto) return
+    const aoTeclar = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') fecharRef.current()
+    }
+    document.addEventListener('keydown', aoTeclar)
+    return () => document.removeEventListener('keydown', aoTeclar)
+  }, [aberto])
 
   if (!aberto) return null
 
