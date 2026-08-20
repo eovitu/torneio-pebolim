@@ -1,7 +1,12 @@
+import { Link } from 'react-router-dom'
 import { MATCH_DURATION_SECONDS, RULES_VERSION } from '@pebolim/domain'
 import { Card, Kicker, Note, Shell } from '../components/Shell'
+import { Botao, Formulario, LinhaAlternativa } from '../components/Formulario'
+import { useAuth } from '../auth/useAuth'
 
 export default function Home() {
+  const { user, carregando, sair } = useAuth()
+
   return (
     <Shell>
       <Card>
@@ -11,6 +16,25 @@ export default function Home() {
           Base do projeto configurada. Domínio das regras ativo — partida de{' '}
           {MATCH_DURATION_SECONDS} segundos, regras versão {RULES_VERSION}.
         </Note>
+
+        <Formulario as="div">
+          {carregando ? (
+            <Note>Carregando sessão…</Note>
+          ) : user !== null ? (
+            <>
+              <Note>
+                Conectado como <strong>{user.email}</strong>.
+              </Note>
+              <Botao type="button" onClick={() => void sair()}>
+                Sair
+              </Botao>
+            </>
+          ) : (
+            <LinhaAlternativa>
+              <Link to="/entrar">Entrar</Link> ou <Link to="/cadastro">criar conta</Link>.
+            </LinhaAlternativa>
+          )}
+        </Formulario>
       </Card>
     </Shell>
   )
