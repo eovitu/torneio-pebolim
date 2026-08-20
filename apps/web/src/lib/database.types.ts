@@ -466,6 +466,45 @@ export type Database = {
           },
         ]
       }
+      tournament_participants: {
+        Row: {
+          auto_inscrito: boolean
+          created_at: string
+          inscrito_por: string | null
+          player_id: string
+          tournament_id: string
+        }
+        Insert: {
+          auto_inscrito?: boolean
+          created_at?: string
+          inscrito_por?: string | null
+          player_id: string
+          tournament_id: string
+        }
+        Update: {
+          auto_inscrito?: boolean
+          created_at?: string
+          inscrito_por?: string | null
+          player_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tournament_participants_player_id_fkey'
+            columns: ['player_id']
+            isOneToOne: false
+            referencedRelation: 'players'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'tournament_participants_tournament_id_fkey'
+            columns: ['tournament_id']
+            isOneToOne: false
+            referencedRelation: 'tournaments'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       tournaments: {
         Row: {
           created_at: string
@@ -574,6 +613,8 @@ export type Database = {
         Returns: Database['public']['Tables']['matches']['Row']
       }
       excluir_torneio: { Args: { p_tournament_id: string }; Returns: undefined }
+      inscrever_se_no_torneio: { Args: { p_tournament_id: string }; Returns: string }
+      sair_do_torneio: { Args: { p_tournament_id: string }; Returns: undefined }
       relogio_servidor: { Args: Record<string, never>; Returns: string }
       vincular_jogador_conta: {
         Args: { p_player_id: string; p_user_id: string | null }
