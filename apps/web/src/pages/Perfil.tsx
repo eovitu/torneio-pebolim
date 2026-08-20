@@ -1,67 +1,85 @@
 /**
- * Perfil do usuário.
+ * Perfil da própria pessoa.
  *
- * As contas nascem com uma senha padrão distribuída pelo dono do torneio, então
- * trocar a senha aqui é o primeiro cuidado de segurança que cada um pode tomar
- * por conta própria.
+ * Parece perfil de jogador, não formulário administrativo (§11 do redesign):
+ * primeiro quem você é e o que você fez em campo; depois, num bloco discreto,
+ * os dados da conta e a troca de senha — que é só mais um bloco do perfil, e
+ * não uma seção "Segurança" assustadora à parte.
  *
- * Tudo nesta tela é do próprio usuário: `profiles` só deixa editar a própria
- * linha, e o avatar vai para uma pasta cujo nome é o id de quem está logado —
- * a policy do Storage não deixa escrever na pasta de outro.
+ * Tudo aqui é do próprio usuário: `profiles` só deixa editar a própria linha, e
+ * o avatar vai para uma pasta cujo nome é o id de quem está logado — a policy
+ * do Storage não deixa escrever na pasta de outro.
+ *
+ * A foto é gravada também em `players.foto_url`, que é a tabela pública: é
+ * assim que o avatar aparece na artilharia e na escalação sem expor `profiles`.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Navigate } from 'react-router-dom'
 import styled from 'styled-components'
+import { Camera, KeyRound, LogOut, UserRound } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 import { useAuth } from '../auth/useAuth'
 import { traduzirErroAuth } from '../auth/erros'
-import { Card, Kicker, Note, Shell } from '../components/Shell'
-import {
-  Alerta,
-  Aviso,
-  Botao,
-  Campo,
-  Entrada,
-  Formulario,
-  LinhaAlternativa,
-} from '../components/Formulario'
+import { useJogadorPublico, useMeuJogador } from '../dados/hooks'
+import { descreverErro } from '../dados/campeonato'
 import { Navegacao } from '../components/Navegacao'
-
-const Foto = styled.img`
-  display: block;
-  width: 96px;
-  height: 96px;
-  object-fit: cover;
-  border: 2px solid ${({ theme }) => theme.color.text};
-  margin-bottom: ${({ theme }) => theme.space[3]};
-`
-
-const SemFoto = styled.div`
-  width: 96px;
-  height: 96px;
-  display: grid;
-  place-items: center;
-  border: 2px dashed ${({ theme }) => theme.color.divider};
-  color: ${({ theme }) => theme.color.muted};
-  font-size: 11px;
-  margin-bottom: ${({ theme }) => theme.space[3]};
-`
-
-const Divisor = styled.hr`
-  border: 0;
-  border-top: 2px solid ${({ theme }) => theme.color.divider};
-  margin: ${({ theme }) => theme.space[6]} 0;
-`
+import { GradeDeNumeros, Numero } from '../components/Cartoes'
+import { Bloco, Cartao, Pagina, Painel, Rotulo, Texto, TituloSecao } from '../ui/Superficie'
+import { Acoes, Botao, BotaoLink } from '../ui/Botao'
+import { Erro, Sucesso } from '../ui/Estados'
+import { Avatar, Badge } from '../ui/Etiqueta'
+import { Campo, Entrada, Formulario } from '../components/Formulario'
 
 /** Limite do bucket `avatars`; a checagem daqui é só para avisar antes de subir. */
 const TAMANHO_MAXIMO = 2 * 1024 * 1024
 const TIPOS_ACEITOS = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
 
+const Cabecalho = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: ${({ theme }) => theme.space[5]};
+
+  h1 {
+    font-size: ${({ theme }) => theme.fontSize.h2};
+    overflow-wrap: anywhere;
+  }
+`
+
+const TrocarFoto = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.space[2]};
+  min-height: 38px;
+  padding: 0 ${({ theme }) => theme.space[3]};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  color: ${({ theme }) => theme.color.onDark};
+  font-size: ${({ theme }) => theme.fontSize.caption};
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.24);
+  }
+
+  input {
+    /* Escondido visualmente, mas ainda alcançável pelo teclado. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+`
+
 export default function Perfil() {
-  const { user, session, carregando: carregandoSessao } = useAuth()
+  const { user, session, carregando: carregandoSessao, sair } = useAuth()
+  const { jogador } = useMeuJogador()
+  const { perfil: publico } = useJogadorPublico(jogador?.id ?? null)
 
   const [perfil, setPerfil] = useState<Tables<'profiles'> | null>(null)
   const [nome, setNome] = useState('')
@@ -81,8 +99,8 @@ export default function Perfil() {
       .select('*')
       .eq('id', user.id)
       .maybeSingle()
-    if (error) {
-      setErro(error.message)
+    if (error !== null) {
+      setErro(descreverErro(error))
       return
     }
     if (data !== null) {
@@ -104,6 +122,7 @@ export default function Perfil() {
     setErro(null)
     setAviso(null)
     setOcupado(true)
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -112,8 +131,15 @@ export default function Perfil() {
         data_nascimento: nascimento === '' ? null : nascimento,
       })
       .eq('id', user.id)
+
+    // O nome público do jogador acompanha o do perfil — senão a artilharia
+    // continuaria mostrando o nome antigo.
+    if (error === null && jogador !== null) {
+      await supabase.from('players').update({ nome: nome.trim() }).eq('id', jogador.id)
+    }
+
     setOcupado(false)
-    if (error) setErro(error.message)
+    if (error !== null) setErro(descreverErro(error))
     else {
       setAviso('Dados atualizados.')
       await carregar()
@@ -135,7 +161,7 @@ export default function Perfil() {
     setOcupado(true)
     const { error } = await supabase.auth.updateUser({ password: senha })
     setOcupado(false)
-    if (error) setErro(traduzirErroAuth(error))
+    if (error !== null) setErro(traduzirErroAuth(error))
     else {
       setSenha('')
       setSenhaRepetida('')
@@ -167,23 +193,27 @@ export default function Perfil() {
       .from('avatars')
       .upload(caminho, arquivo, { upsert: true, contentType: arquivo.type })
 
-    if (erroUpload) {
+    if (erroUpload !== null) {
       setOcupado(false)
-      setErro(erroUpload.message)
+      setErro(descreverErro(erroUpload))
       return
     }
 
-    const { data: publico } = supabase.storage.from('avatars').getPublicUrl(caminho)
+    const { data: publicoUrl } = supabase.storage.from('avatars').getPublicUrl(caminho)
     // A query no fim força o navegador a buscar de novo depois da troca.
-    const url = `${publico.publicUrl}?v=${Date.now()}`
+    const url = `${publicoUrl.publicUrl}?v=${Date.now()}`
 
     const { error: erroPerfil } = await supabase
       .from('profiles')
       .update({ avatar_url: url })
       .eq('id', user.id)
 
+    if (erroPerfil === null && jogador !== null) {
+      await supabase.from('players').update({ foto_url: url }).eq('id', jogador.id)
+    }
+
     setOcupado(false)
-    if (erroPerfil) setErro(erroPerfil.message)
+    if (erroPerfil !== null) setErro(descreverErro(erroPerfil))
     else {
       setAviso('Foto atualizada.')
       await carregar()
@@ -191,89 +221,143 @@ export default function Perfil() {
     if (arquivoRef.current !== null) arquivoRef.current.value = ''
   }
 
+  const s = publico?.estatisticas
+
   return (
     <>
       <Navegacao />
-      <Shell>
-        <Card>
-          <Kicker>Perfil</Kicker>
-          <h1>Sua conta</h1>
-          <Note>{user?.email}</Note>
+      <Pagina>
+        <Painel>
+          <Cabecalho>
+            <Avatar nome={perfil?.nome ?? '?'} url={perfil?.avatar_url} tamanho="xl" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Rotulo style={{ color: 'rgba(255,255,255,.65)' }}>Seu perfil</Rotulo>
+              <h1>{perfil?.nome ?? 'Carregando…'}</h1>
+              <Texto $claro $pequeno style={{ marginTop: 4 }}>
+                {user?.email}
+              </Texto>
+              <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+                <TrocarFoto>
+                  <Camera size={15} aria-hidden="true" />
+                  Trocar foto
+                  <input
+                    ref={arquivoRef}
+                    type="file"
+                    accept={TIPOS_ACEITOS.join(',')}
+                    disabled={ocupado}
+                    onChange={(e) => void enviarFoto(e)}
+                  />
+                </TrocarFoto>
+                {jogador !== null && (
+                  <BotaoLink to={`/players/${jogador.id}`} $variante="claro" $tamanho="sm">
+                    <UserRound size={15} aria-hidden="true" />
+                    Ver perfil público
+                  </BotaoLink>
+                )}
+              </div>
+            </div>
+          </Cabecalho>
+        </Painel>
 
-          {erro !== null && <Alerta>{erro}</Alerta>}
-          {aviso !== null && <Aviso>{aviso}</Aviso>}
+        {erro !== null && <Erro>{erro}</Erro>}
+        {aviso !== null && <Sucesso>{aviso}</Sucesso>}
 
-          {perfil?.avatar_url ? (
-            <Foto src={perfil.avatar_url} alt="Sua foto de perfil" />
-          ) : (
-            <SemFoto>sem foto</SemFoto>
-          )}
+        {s !== undefined && (
+          <Bloco>
+            <TituloSecao>
+              <h2>Sua campanha</h2>
+              {publico !== null && publico.times.length > 0 && (
+                <Badge $tom="marca">
+                  {publico.times.length === 1 ? '1 time' : `${publico.times.length} times`}
+                </Badge>
+              )}
+            </TituloSecao>
+            <GradeDeNumeros>
+              <Numero valor={s.artilhariaLiquida} rotulo="artilharia" destaque />
+              <Numero valor={s.goals} rotulo="gols" />
+              <Numero valor={s.keeperGoals} rotulo="de goleiro" />
+              <Numero valor={s.ownGoals} rotulo="contra" />
+              <Numero valor={s.j} rotulo="jogos" />
+              <Numero valor={s.v} rotulo="vitórias" />
+              <Numero valor={s.e} rotulo="empates" />
+              <Numero valor={s.d} rotulo="derrotas" />
+            </GradeDeNumeros>
+          </Bloco>
+        )}
 
-          <Campo>
-            Foto de perfil
-            <input
-              ref={arquivoRef}
-              type="file"
-              accept={TIPOS_ACEITOS.join(',')}
-              disabled={ocupado}
-              onChange={(e) => void enviarFoto(e)}
-            />
-          </Campo>
+        <Bloco>
+          <TituloSecao>
+            <h2>Seus dados</h2>
+          </TituloSecao>
+          <Cartao>
+            <Formulario onSubmit={(e) => void salvarDados(e)}>
+              <Campo>
+                Nome de exibição
+                <Entrada value={nome} onChange={(e) => setNome(e.target.value)} minLength={2} />
+              </Campo>
+              <Campo>
+                Data de nascimento (opcional)
+                <Entrada
+                  type="date"
+                  value={nascimento}
+                  onChange={(e) => setNascimento(e.target.value)}
+                />
+              </Campo>
+              <Botao type="submit" disabled={ocupado}>
+                {ocupado ? 'Salvando…' : 'Salvar dados'}
+              </Botao>
+            </Formulario>
+          </Cartao>
+        </Bloco>
 
-          <Formulario onSubmit={(e) => void salvarDados(e)}>
-            <Campo>
-              Nome de exibição
-              <Entrada value={nome} onChange={(e) => setNome(e.target.value)} minLength={2} />
-            </Campo>
-            <Campo>
-              Data de nascimento (opcional)
-              <Entrada
-                type="date"
-                value={nascimento}
-                onChange={(e) => setNascimento(e.target.value)}
-              />
-            </Campo>
-            <Botao type="submit" disabled={ocupado}>
-              Salvar dados
-            </Botao>
-          </Formulario>
-
-          <Divisor />
-
-          <Formulario onSubmit={(e) => void trocarSenha(e)}>
-            <Kicker>Segurança</Kicker>
-            <Note>
+        <Bloco>
+          <TituloSecao>
+            <h2>
+              <KeyRound size={20} aria-hidden="true" />
+              Sua senha
+            </h2>
+          </TituloSecao>
+          <Cartao>
+            <Texto $pequeno $mudo style={{ marginBottom: 16 }}>
               Se você entrou com a senha padrão distribuída pelo organizador, troque agora por uma
               só sua.
-            </Note>
-            <Campo>
-              Nova senha
-              <Entrada
-                type="password"
-                autoComplete="new-password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-              />
-            </Campo>
-            <Campo>
-              Repita a nova senha
-              <Entrada
-                type="password"
-                autoComplete="new-password"
-                value={senhaRepetida}
-                onChange={(e) => setSenhaRepetida(e.target.value)}
-              />
-            </Campo>
-            <Botao type="submit" disabled={ocupado}>
-              Trocar senha
-            </Botao>
-          </Formulario>
+            </Texto>
+            <Formulario onSubmit={(e) => void trocarSenha(e)}>
+              <Campo>
+                Nova senha
+                <Entrada
+                  type="password"
+                  autoComplete="new-password"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                />
+              </Campo>
+              <Campo>
+                Repita a nova senha
+                <Entrada
+                  type="password"
+                  autoComplete="new-password"
+                  value={senhaRepetida}
+                  onChange={(e) => setSenhaRepetida(e.target.value)}
+                />
+              </Campo>
+              <Botao type="submit" $variante="contorno" disabled={ocupado}>
+                Trocar senha
+              </Botao>
+            </Formulario>
+          </Cartao>
+        </Bloco>
 
-          <LinhaAlternativa>
-            <Link to="/home">Voltar</Link>
-          </LinhaAlternativa>
-        </Card>
-      </Shell>
+        <Acoes>
+          <BotaoLink to="/rules" $variante="fantasma">
+            Ver regras oficiais
+          </BotaoLink>
+          <Botao type="button" $variante="contorno" onClick={() => void sair()}>
+            <LogOut size={16} aria-hidden="true" />
+            Sair da conta
+          </Botao>
+        </Acoes>
+      </Pagina>
     </>
   )
 }
