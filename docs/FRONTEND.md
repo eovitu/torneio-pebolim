@@ -152,7 +152,20 @@ Toda tela importante trata quatro estados com as mesmas peças:
 `Carregando` (esqueleto), `Vazio` (com chamada para ação), `Erro`
 (`role="alert"`) e `Sucesso` (`role="status"`).
 
-## 8. Acessibilidade
+## 8. Armadilhas já pagas
+
+Duas coisas quebraram no primeiro uso real e estão travadas por teste:
+
+- **Corpo de modal não rolava.** Item flex sem `min-height: 0` não encolhe; a
+  caixa estourava a altura máxima e o rodapé, com o botão de confirmar, saía da
+  tela. No modal de regras isso travava o app inteiro. Todo contêiner rolável
+  dentro de um flex precisa de `min-height: 0`.
+- **Teclado do celular fechando a cada letra.** O efeito de abertura do modal
+  dependia da callback `aoFechar`, recriada a cada render; cada tecla
+  reexecutava o efeito e devolvia o foco ao diálogo. Callback em efeito de
+  ciclo de vida vai por `ref`, não por dependência.
+
+## 9. Acessibilidade
 
 - alvo de toque mínimo de 48px (`layout.toque`);
 - campos com 16px de fonte, para não disparar o zoom do iOS;
@@ -161,7 +174,7 @@ Toda tela importante trata quatro estados com as mesmas peças:
 - nenhuma informação depende só de cor — "ao vivo" tem ponto pulsante **e** a
   palavra escrita; empate sem critério aparece rotulado.
 
-## 9. Performance
+## 10. Performance
 
 - `React.lazy` em todas as rotas fora do caminho de entrada;
 - `manualChunks` separa React, Supabase, styled-components e ícones, para que
@@ -169,11 +182,13 @@ Toda tela importante trata quatro estados com as mesmas peças:
 - consultas escopadas por torneio;
 - realtime só onde há motivo.
 
-## 10. Testes
+## 11. Testes
 
 | Arquivo | Cobre |
 | --- | --- |
 | `components/ModalRegras.test.tsx` | trava de rolagem do aceite |
+| `auth/AuthProvider.test.tsx` | ciclo de vida da confirmação das regras |
+| `ui/Modal.test.tsx` | rolagem, z-index e foco dos modais (regressões reais) |
 | `components/PortaoDeRegras.test.tsx` | obrigatoriedade das regras por sessão |
 | `pages/telas.test.tsx` | fumaça: todas as telas principais montam com banco vazio |
 

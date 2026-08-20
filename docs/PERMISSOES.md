@@ -39,12 +39,17 @@ montado sobre `players`, e nem e-mail nem data de nascimento saem de lá.
 | Gol / gol de goleiro / gol contra | jogador escalado, juiz ou admin | `registrar_gol` → `is_operador_da_partida` |
 | Remover gol | idem | `remover_gol` |
 | Pausar / retomar / encerrar | idem | RPCs correspondentes |
-| Personalizar time | admin | `teams_update_admin` |
+| Personalizar time (nome, descrição, cor, escudo) | admin **ou quem joga naquele time** | `teams_update_admin_ou_integrante` + grant por coluna |
 | Editar perfil / trocar senha | a própria pessoa | `profiles_update_proprio`, Supabase Auth |
 | Trocar foto | a própria pessoa | policy do Storage por pasta = `auth.uid()` |
 | Criar contas | admin | Edge Function `admin-criar-usuario` |
 | Vincular jogador a conta | admin | `vincular_jogador_conta` |
 | Excluir torneio | admin, e só sem nenhuma partida | `excluir_torneio` |
+
+Em `teams`, a policy decide QUAIS linhas cada um altera e o grant por coluna
+decide QUAIS campos: só `nome`, `descricao`, `logo_url` e `cor_primaria` são
+graváveis pelo cliente. Sem o grant, uma policy de UPDATE deixaria mexer em
+`tournament_id` e mudar a equipe de campeonato — RLS não filtra coluna.
 
 `matches` não tem policy de UPDATE para ninguém: status e relógio mudam
 exclusivamente pelas RPCs, com `now()` do servidor. `match_events` é
@@ -67,7 +72,26 @@ O administrador continua podendo inscrever quem não tem conta, pelo nome.
 Sair só é possível enquanto as inscrições estão abertas e antes de ter sido
 sorteado em uma equipe.
 
-## 5. Aceite das regras
+## 5. Nome e foto: `profiles` privado, `players` público
+
+`profiles` é privado (só o dono e o admin leem). `players` é o que aparece
+publicamente — em escalação, artilharia, histórico e perfil público.
+
+O gatilho `trg_50_sincronizar_jogador` copia de `profiles` para `players`
+exatamente os dois campos que já eram públicos: **nome** e **foto**. Nada que
+era privado passa a ser visível; e-mail e data de nascimento nunca saem de
+`profiles`.
+
+Ele vive no banco, e não no navegador, porque a sincronização precisa valer
+para todas as portas: a tela de perfil, a criação do jogador pela
+autoinscrição, ou qualquer alteração futura. Quando isso era feito no cliente,
+quem nunca abriu a tela de perfil aparecia na artilharia com o nome do cadastro
+e sem foto.
+
+`players.foto_url` só é sobrescrita quando o perfil tem foto, para não apagar a
+imagem que o organizador possa ter posto em um jogador sem conta.
+
+## 6. Aceite das regras
 
 Duas coisas diferentes, de propósito:
 
@@ -88,10 +112,11 @@ Ao confirmar, o aceite da versão vigente é gravado em `rules_acceptance` se
 ainda não existir — é assim que contas criadas pelo administrador passam a ter
 registro.
 
-## 6. O que a interface NÃO decide
+## 7. O que a interface NÃO decide
 
 - se você pode operar uma partida — `is_operador_da_partida`;
 - se você é administrador — `is_admin`;
 - se a inscrição está aberta — `inscrever_se_no_torneio`;
 - se um torneio pode ser excluído — `excluir_torneio` conta as partidas;
+- se você pode editar aquele time — `teams_update_admin_ou_integrante`;
 - qual o placar — os eventos, sempre.
