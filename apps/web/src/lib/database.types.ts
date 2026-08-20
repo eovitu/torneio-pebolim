@@ -573,6 +573,11 @@ export type Database = {
         Args: { p_match_id: string }
         Returns: Database['public']['Tables']['matches']['Row']
       }
+      relogio_servidor: { Args: Record<string, never>; Returns: string }
+      vincular_jogador_conta: {
+        Args: { p_player_id: string; p_user_id: string | null }
+        Returns: Database['public']['Tables']['players']['Row']
+      }
       is_admin: { Args: { uid: string }; Returns: boolean }
       is_factory_admin: { Args: { uid: string }; Returns: boolean }
       is_jogador_do_torneio: {

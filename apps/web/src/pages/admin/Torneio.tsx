@@ -59,6 +59,7 @@ export default function Torneio() {
   const [elencos, setElencos] = useState<Elenco[]>([])
   const [fases, setFases] = useState<Fase[]>([])
   const [partidas, setPartidas] = useState<Partida[]>([])
+  const [perfis, setPerfis] = useState<Tables<'profiles'>[]>([])
 
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -73,15 +74,16 @@ export default function Torneio() {
 
   const carregar = useCallback(async () => {
     setCarregando(true)
-    const [t, p, e, tp, f, m] = await Promise.all([
+    const [t, p, e, tp, f, m, perf] = await Promise.all([
       supabase.from('tournaments').select('*').eq('id', id).maybeSingle(),
       supabase.from('players').select('*').order('nome'),
       supabase.from('teams').select('*').eq('tournament_id', id).order('nome'),
       supabase.from('team_players').select('team_id, player_id').eq('tournament_id', id),
       supabase.from('phases').select('*').eq('tournament_id', id).order('ordem'),
       supabase.from('matches').select('*').eq('tournament_id', id).order('ordem'),
+      supabase.from('profiles').select('*').order('nome'),
     ])
-    const falha = [t, p, e, tp, f, m].find((r) => r.error)
+    const falha = [t, p, e, tp, f, m, perf].find((r) => r.error)
     if (falha?.error) setErro(falha.error.message)
     setTorneio(t.data ?? null)
     setJogadores(p.data ?? [])
@@ -89,6 +91,7 @@ export default function Torneio() {
     setElencos(tp.data ?? [])
     setFases(f.data ?? [])
     setPartidas(m.data ?? [])
+    setPerfis(perf.data ?? [])
     setCarregando(false)
   }, [id])
 
@@ -217,6 +220,42 @@ export default function Torneio() {
             Cadastrar participante
           </Botao>
         </Formulario>
+
+        {jogadores.length > 0 && (
+          <>
+            <Etiqueta>Vínculo com conta</Etiqueta>
+            <Note>
+              Vincular a conta é o que permite à pessoa iniciar e operar partidas. Quem faz o
+              vínculo é você — assim ninguém reivindica o nome de outro.
+            </Note>
+            <Itens>
+              {jogadores.map((j) => (
+                <li key={j.id}>
+                  <span>{j.nome}</span>
+                  <select
+                    value={j.profile_id ?? ''}
+                    disabled={ocupado}
+                    onChange={(ev) =>
+                      void executar(() =>
+                        supabase.rpc('vincular_jogador_conta', {
+                          p_player_id: j.id,
+                          p_user_id: ev.target.value === '' ? null : ev.target.value,
+                        }),
+                      )
+                    }
+                  >
+                    <option value="">sem conta vinculada</option>
+                    {perfis.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nome}
+                      </option>
+                    ))}
+                  </select>
+                </li>
+              ))}
+            </Itens>
+          </>
+        )}
       </Secao>
 
       <Secao>
@@ -418,9 +457,9 @@ export default function Torneio() {
                 <Itens>
                   {daFase.map((p) => (
                     <li key={p.id}>
-                      <span>
+                      <Link to={`/matches/${p.id}`}>
                         {p.label} — {nomeDe(p.team_a_id)} × {nomeDe(p.team_b_id)}
-                      </span>
+                      </Link>
                       <Etiqueta>{p.status}</Etiqueta>
                     </li>
                   ))}

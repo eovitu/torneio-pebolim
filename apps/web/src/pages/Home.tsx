@@ -27,9 +27,13 @@ export default function Home() {
               <Note>
                 Conectado como <strong>{user.email}</strong>.
               </Note>
+              <LinhaAlternativa>
+                <Link to="/profile">Meu perfil</Link>
+              </LinhaAlternativa>
               {ehAdmin && (
                 <LinhaAlternativa>
-                  <Link to="/admin/tournaments">Administrar torneios</Link>
+                  <Link to="/admin/tournaments">Administrar torneios</Link> ·{' '}
+                  <Link to="/admin/users">Contas</Link>
                 </LinhaAlternativa>
               )}
               <Botao type="button" onClick={() => void sair()}>
