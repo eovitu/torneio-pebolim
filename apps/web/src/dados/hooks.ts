@@ -18,14 +18,14 @@ import { emptyPlayerStats } from '@pebolim/domain'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 import { useAuth } from '../auth/useAuth'
-import {
-  buscarCru,
-  derivar,
-  descreverErro,
-  estaAoVivo,
-  paraDominio,
+import { buscarCru, derivar, descreverErro, estaAoVivo, paraDominio } from './campeonato'
+import type {
+  Campeonato,
+  LinhaEquipe,
+  LinhaJogador,
+  LinhaPartida,
+  LinhaTorneio,
 } from './campeonato'
-import type { Campeonato, LinhaEquipe, LinhaJogador, LinhaPartida, LinhaTorneio } from './campeonato'
 
 /** Assina mudanças de partida/evento e chama `aoMudar` quando algo acontece. */
 function useCanalDePartidas(chave: string | null, aoMudar: () => void) {
@@ -334,7 +334,10 @@ export function usePainel() {
     }
 
     const aoVivo = partidas.filter(estaAoVivo).map(comPlacar)
-    const proximas = partidas.filter((p) => p.status === 'SCHEDULED').slice(0, 6).map(comPlacar)
+    const proximas = partidas
+      .filter((p) => p.status === 'SCHEDULED')
+      .slice(0, 6)
+      .map(comPlacar)
     const recentes = partidas
       .filter((p) => p.status === 'FINISHED')
       .slice(-5)
@@ -434,6 +437,69 @@ export function useMeusTimes() {
 }
 
 /**
+ * Times permanentes de que a pessoa faz parte.
+ *
+ * O clube é a identidade que atravessa campeonatos; `club_members` é a dupla
+ * permanente dele. Aqui não há regra esportiva nenhuma — é uma lista.
+ */
+export function useMeusClubes() {
+  const { jogador, carregando: carregandoJogador } = useMeuJogador()
+  const [clubes, setClubes] = useState<
+    { clube: Tables<'clubs'>; integrantes: Tables<'players'>[] }[]
+  >([])
+  const [carregando, setCarregando] = useState(true)
+
+  const carregar = useCallback(async () => {
+    if (jogador === null) {
+      setClubes([])
+      setCarregando(false)
+      return
+    }
+    const { data: meus } = await supabase
+      .from('club_members')
+      .select('club_id')
+      .eq('player_id', jogador.id)
+
+    const ids = [...new Set((meus ?? []).map((l) => l.club_id))]
+    if (ids.length === 0) {
+      setClubes([])
+      setCarregando(false)
+      return
+    }
+
+    const [c, membros] = await Promise.all([
+      supabase.from('clubs').select('*').in('id', ids).order('nome'),
+      supabase.from('club_members').select('club_id, player_id').in('club_id', ids),
+    ])
+
+    const idsJogador = [...new Set((membros.data ?? []).map((l) => l.player_id))]
+    const { data: jogadores } = await supabase.from('players').select('*').in('id', idsJogador)
+    const porId = new Map((jogadores ?? []).map((j) => [j.id, j]))
+
+    setClubes(
+      (c.data ?? []).map((clube) => ({
+        clube,
+        integrantes: (membros.data ?? [])
+          .filter((l) => l.club_id === clube.id)
+          .flatMap((l) => {
+            const j = porId.get(l.player_id)
+            return j === undefined ? [] : [j]
+          }),
+      })),
+    )
+    setCarregando(false)
+  }, [jogador])
+
+  useEffect(() => {
+    if (carregandoJogador) return
+    setCarregando(true)
+    void carregar()
+  }, [carregar, carregandoJogador])
+
+  return { clubes, carregando: carregando || carregandoJogador, recarregar: carregar }
+}
+
+/**
  * Partidas dos torneios em que a pessoa participa.
  *
  * Mostrar só os torneios dela é decisão de interface: quem opera uma partida é
@@ -490,7 +556,8 @@ export function useMinhasPartidas() {
         let b = 0
         for (const x of doJogo) {
           if (removidos.has(x.id)) continue
-          if (x.type !== 'NORMAL_GOAL' && x.type !== 'KEEPER_GOAL' && x.type !== 'OWN_GOAL') continue
+          if (x.type !== 'NORMAL_GOAL' && x.type !== 'KEEPER_GOAL' && x.type !== 'OWN_GOAL')
+            continue
           const paraA =
             x.type === 'OWN_GOAL' ? x.team_id !== linha.team_a_id : x.team_id === linha.team_a_id
           const valor = x.goal_value ?? 1
@@ -602,7 +669,9 @@ export function useJogadorPublico(playerId: string | null) {
     const minhasEquipes = new Set(times.map((x) => x.equipe.id))
     const partidas: PartidaDoPainel[] = validos
       .flatMap((c) => derivar(c).partidas.map((p) => ({ p, torneio: c.torneio })))
-      .filter(({ p }) => minhasEquipes.has(p.linha.team_a_id) || minhasEquipes.has(p.linha.team_b_id))
+      .filter(
+        ({ p }) => minhasEquipes.has(p.linha.team_a_id) || minhasEquipes.has(p.linha.team_b_id),
+      )
       .map(({ p, torneio }) => ({
         linha: p.linha,
         nomeA: p.nomeA,

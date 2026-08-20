@@ -44,8 +44,8 @@ const Caixa = styled.div`
   /* Folha inferior no celular, cartão centralizado no desktop. */
   border-radius: ${({ theme }) => theme.radius.lg} ${({ theme }) => theme.radius.lg} 0 0;
   box-shadow: ${({ theme }) => theme.shadow.lg};
-  animation: pb-surgir ${({ theme }) => theme.motion.normal}
-    ${({ theme }) => theme.motion.entrada} both;
+  animation: pb-surgir ${({ theme }) => theme.motion.normal} ${({ theme }) => theme.motion.entrada}
+    both;
 
   @media (min-width: ${({ theme }) => theme.breakpoint.sm}) {
     border-radius: ${({ theme }) => theme.radius.lg};
@@ -140,10 +140,22 @@ export function Modal({ aberto, titulo, aoFechar, children, rodape }: PropsModal
 
   return (
     <Fundo onMouseDown={(ev) => ev.target === ev.currentTarget && aoFechar()}>
-      <Caixa role="dialog" aria-modal="true" aria-labelledby={idTitulo} tabIndex={-1} ref={caixaRef}>
+      <Caixa
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={idTitulo}
+        tabIndex={-1}
+        ref={caixaRef}
+      >
         <Cabecalho>
           <h2 id={idTitulo}>{titulo}</h2>
-          <BotaoIcone type="button" $variante="fantasma" $redondo onClick={aoFechar} aria-label="Fechar">
+          <BotaoIcone
+            type="button"
+            $variante="fantasma"
+            $redondo
+            onClick={aoFechar}
+            aria-label="Fechar"
+          >
             <X size={20} />
           </BotaoIcone>
         </Cabecalho>

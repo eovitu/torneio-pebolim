@@ -110,7 +110,12 @@ export default function Home() {
           <AvisoConexao role="status">
             <WifiOff size={17} aria-hidden="true" />
             <span>Sem atualização automática no momento.</span>
-            <Botao type="button" $variante="contorno" $tamanho="sm" onClick={() => void recarregar()}>
+            <Botao
+              type="button"
+              $variante="contorno"
+              $tamanho="sm"
+              onClick={() => void recarregar()}
+            >
               Atualizar
             </Botao>
           </AvisoConexao>

@@ -15,7 +15,7 @@ import { ChevronRight, Radio, Trophy, Users } from 'lucide-react'
 import type { LinhaEquipe, LinhaJogador, LinhaPartida, LinhaTorneio } from '../dados/campeonato'
 import { ROTULO_STATUS_PARTIDA, ROTULO_STATUS_TORNEIO, estaAoVivo } from '../dados/campeonato'
 import { Avatar, Badge, PilhaAvatares, PontoAoVivo } from '../ui/Etiqueta'
-import { Rotulo, Texto, } from '../ui/Superficie'
+import { Rotulo, Texto } from '../ui/Superficie'
 import { cartaoInterativo } from '../ui/estilos'
 import { tomDoStatusDaPartida, tomDoStatusDoTorneio } from './tons'
 

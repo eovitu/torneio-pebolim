@@ -30,6 +30,7 @@ const Torneios = lazy(() => import('./pages/Torneios'))
 const Torneio = lazy(() => import('./pages/Torneio'))
 const Times = lazy(() => import('./pages/Times'))
 const Time = lazy(() => import('./pages/Time'))
+const Clube = lazy(() => import('./pages/Clube'))
 const Partidas = lazy(() => import('./pages/Partidas'))
 const Partida = lazy(() => import('./pages/Partida'))
 const Perfil = lazy(() => import('./pages/Perfil'))
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="/tournaments/:id" element={<Torneio />} />
               <Route path="/teams" element={<Times />} />
               <Route path="/teams/:id" element={<Time />} />
+              <Route path="/clubs/:id" element={<Clube />} />
               <Route path="/matches" element={<Partidas />} />
               <Route path="/matches/:id" element={<Partida />} />
               <Route path="/players/:id" element={<Jogador />} />

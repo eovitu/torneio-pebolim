@@ -33,7 +33,13 @@ const ListaEsqueleto = styled.div`
 `
 
 /** Carregamento padrão de uma lista. */
-export function Carregando({ linhas = 3, rotulo = 'Carregando…' }: { linhas?: number; rotulo?: string }) {
+export function Carregando({
+  linhas = 3,
+  rotulo = 'Carregando…',
+}: {
+  linhas?: number
+  rotulo?: string
+}) {
   return (
     <ListaEsqueleto role="status" aria-live="polite" aria-busy="true">
       <span

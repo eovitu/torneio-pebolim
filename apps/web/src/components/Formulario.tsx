@@ -99,12 +99,15 @@ export const Selecao = styled.select`
   appearance: none;
   color: ${({ theme }) => theme.color.text};
   background-color: ${({ theme }) => theme.color.surface};
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
     linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position:
     calc(100% - 19px) calc(50% + 1px),
     calc(100% - 13px) calc(50% + 1px);
-  background-size: 6px 6px, 6px 6px;
+  background-size:
+    6px 6px,
+    6px 6px;
   background-repeat: no-repeat;
   border: 1px solid ${({ theme }) => theme.color.border};
   border-radius: ${({ theme }) => theme.radius.sm};

@@ -92,7 +92,8 @@ const ItemTopo = styled(NavLink)`
   font-weight: 700;
   text-decoration: none;
   color: ${({ theme }) => theme.color.onDarkMuted};
-  transition: background ${({ theme }) => theme.motion.rapido} ease,
+  transition:
+    background ${({ theme }) => theme.motion.rapido} ease,
     color ${({ theme }) => theme.motion.rapido} ease;
 
   &:hover {

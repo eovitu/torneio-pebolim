@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Dices,
+  Hand,
   Layers,
   Plus,
   Settings2,
@@ -42,7 +43,16 @@ import {
 import { ROTULO_STATUS_TORNEIO, descreverErro } from '../../dados/campeonato'
 import { Navegacao } from '../../components/Navegacao'
 import { CartaoDePartida } from '../../components/Cartoes'
-import { Bloco, Cartao, Divisor, Pagina, Painel, Rotulo, Texto, TituloSecao } from '../../ui/Superficie'
+import {
+  Bloco,
+  Cartao,
+  Divisor,
+  Pagina,
+  Painel,
+  Rotulo,
+  Texto,
+  TituloSecao,
+} from '../../ui/Superficie'
 import { Acoes, Botao, BotaoLink } from '../../ui/Botao'
 import { Carregando, Erro, Sucesso, Vazio, Aviso } from '../../ui/Estados'
 import { Avatar, Badge } from '../../ui/Etiqueta'
@@ -111,6 +121,41 @@ const ZonaDeRisco = styled(Cartao)`
   }
 `
 
+/** Escolha entre sortear e montar. Alvo de toque cheio, como manda o §43. */
+const AbasDeModo = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: ${({ theme }) => theme.space[2]};
+`
+
+const AbaModo = styled.button<{ $ativa: boolean }>`
+  font: inherit;
+  font-size: ${({ theme }) => theme.fontSize.small};
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.space[2]};
+  min-height: ${({ theme }) => theme.layout.toque};
+  padding: 0 ${({ theme }) => theme.space[3]};
+  cursor: pointer;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  transition: background ${({ theme }) => theme.motion.rapido};
+  color: ${({ theme, $ativa }) => ($ativa ? theme.color.onDark : theme.color.muted)};
+  background: ${({ theme, $ativa }) => ($ativa ? theme.color.campo[700] : theme.color.surfaceAlt)};
+  border: 1px solid
+    ${({ theme, $ativa }) => ($ativa ? theme.color.campo[700] : theme.color.borderSoft)};
+`
+
+const BlocoEquipe = styled.fieldset`
+  display: grid;
+  gap: ${({ theme }) => theme.space[3]};
+  padding: ${({ theme }) => theme.space[3]};
+  border: 1px solid ${({ theme }) => theme.color.borderSoft};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  background: ${({ theme }) => theme.color.surfaceAlt};
+`
+
 const CartaoFase = styled(Cartao)`
   display: flex;
   flex-direction: column;
@@ -126,6 +171,8 @@ export default function TorneioAdmin() {
   const [equipes, setEquipes] = useState<Tables<'teams'>[]>([])
   const [elencos, setElencos] = useState<Tables<'team_players'>[]>([])
   const [participantes, setParticipantes] = useState<Tables<'tournament_participants'>[]>([])
+  const [clubes, setClubes] = useState<Tables<'clubs'>[]>([])
+  const [membrosDeClube, setMembrosDeClube] = useState<Tables<'club_members'>[]>([])
   const [fases, setFases] = useState<Tables<'phases'>[]>([])
   const [partidas, setPartidas] = useState<Tables<'matches'>[]>([])
   const [perfis, setPerfis] = useState<Tables<'profiles'>[]>([])
@@ -142,9 +189,12 @@ export default function TorneioAdmin() {
   const [tipoFase, setTipoFase] = useState<Enums<'phase_kind'>>('GROUP')
   const [confronto, setConfronto] = useState<Record<string, { a: string; b: string }>>({})
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const [modoFormacao, setModoFormacao] = useState<'sorteio' | 'manual'>('sorteio')
+  /** Uma entrada por equipe a formar, na ordem: duplas primeiro, sozinhos depois. */
+  const [montagem, setMontagem] = useState<{ clubId: string; jogadores: string[] }[]>([])
 
   const carregar = useCallback(async () => {
-    const [t, p, e, tp, part, f, m, perf] = await Promise.all([
+    const [t, p, e, tp, part, f, m, perf, cl, cm] = await Promise.all([
       supabase.from('tournaments').select('*').eq('id', id).maybeSingle(),
       supabase.from('players').select('*').order('nome'),
       supabase.from('teams').select('*').eq('tournament_id', id).order('nome'),
@@ -153,8 +203,10 @@ export default function TorneioAdmin() {
       supabase.from('phases').select('*').eq('tournament_id', id).order('ordem'),
       supabase.from('matches').select('*').eq('tournament_id', id).order('ordem'),
       supabase.from('profiles').select('*').order('nome'),
+      supabase.from('clubs').select('*').order('nome'),
+      supabase.from('club_members').select('*'),
     ])
-    const falha = [t, p, e, tp, part, f, m, perf].find((r) => r.error)
+    const falha = [t, p, e, tp, part, f, m, perf, cl, cm].find((r) => r.error)
     if (falha?.error !== undefined && falha.error !== null) setErro(descreverErro(falha.error))
     setTorneio(t.data ?? null)
     setJogadores(p.data ?? [])
@@ -164,6 +216,8 @@ export default function TorneioAdmin() {
     setFases(f.data ?? [])
     setPartidas(m.data ?? [])
     setPerfis(perf.data ?? [])
+    setClubes(cl.data ?? [])
+    setMembrosDeClube(cm.data ?? [])
     setCarregando(false)
   }, [id])
 
@@ -174,9 +228,7 @@ export default function TorneioAdmin() {
   // Quem já se inscreveu entra pré-selecionado no sorteio — era isso que fazia
   // o admin marcar oito caixas na mão toda vez.
   useEffect(() => {
-    setSelecionados((atual) =>
-      atual.length === 0 ? participantes.map((p) => p.player_id) : atual,
-    )
+    setSelecionados((atual) => (atual.length === 0 ? participantes.map((p) => p.player_id) : atual))
   }, [participantes])
 
   /**
@@ -186,10 +238,7 @@ export default function TorneioAdmin() {
    * não Promises — dá para await, mas não têm `catch`/`finally`.
    */
   const executar = useCallback(
-    async (
-      acao: () => PromiseLike<{ error: { message: string } | null }>,
-      mensagem?: string,
-    ) => {
+    async (acao: () => PromiseLike<{ error: { message: string } | null }>, mensagem?: string) => {
       setErro(null)
       setAviso(null)
       setOcupado(true)
@@ -214,6 +263,30 @@ export default function TorneioAdmin() {
     if (participantes.length < MIN_PARTICIPANTES) return null
     return comporEquipes(participantes.length)
   }, [participantes.length])
+
+  /**
+   * Slots da montagem manual.
+   *
+   * A FORMA vem da regra, não do administrador: quantas duplas e quantos
+   * sozinhos é o que o número de inscritos determina (§8). O que ele escolhe é
+   * quem joga com quem. O servidor revalida exatamente isso.
+   */
+  useEffect(() => {
+    if (composicaoAtual === null) {
+      setMontagem([])
+      return
+    }
+    setMontagem((atual) => {
+      const mesmaForma =
+        atual.length === composicaoAtual.tamanhos.length &&
+        atual.every((s, i) => s.jogadores.length === composicaoAtual.tamanhos[i])
+      if (mesmaForma) return atual
+      return composicaoAtual.tamanhos.map((tamanho) => ({
+        clubId: '',
+        jogadores: Array.from({ length: tamanho }, () => ''),
+      }))
+    })
+  }, [composicaoAtual])
 
   const nomeDe = useCallback(
     (teamId: string) => equipes.find((e) => e.id === teamId)?.nome ?? '—',
@@ -261,6 +334,48 @@ export default function TorneioAdmin() {
   const idsInscritos = new Set(participantes.map((p) => p.player_id))
   const jaCadastrados = jogadores.filter((j) => !idsInscritos.has(j.id))
 
+  /* ---- montagem manual ---------------------------------------------------- */
+
+  const usadosNaMontagem = new Set(montagem.flatMap((s) => s.jogadores).filter((x) => x !== ''))
+  const montagemCompleta =
+    montagem.length > 0 && montagem.every((s) => s.jogadores.every((j) => j !== ''))
+
+  const membrosDo = (clubId: string) =>
+    membrosDeClube.filter((m) => m.club_id === clubId).map((m) => m.player_id)
+
+  /** Escolher um time guardado preenche a dupla dele — é o atalho do pedido. */
+  const aplicarClube = (indice: number, clubId: string) => {
+    setMontagem((atual) => {
+      const proximo = atual.map((s) => ({ ...s, jogadores: [...s.jogadores] }))
+      const alvo = proximo[indice]
+      if (alvo === undefined) return atual
+      alvo.clubId = clubId
+      if (clubId === '') return proximo
+
+      // Quem o clube traz precisa estar inscrito e ainda livre nos outros slots.
+      const ocupadosFora = new Set(
+        proximo.flatMap((s, i) => (i === indice ? [] : s.jogadores)).filter((x) => x !== ''),
+      )
+      const trazidos = membrosDo(clubId).filter(
+        (id) => idsInscritos.has(id) && !ocupadosFora.has(id),
+      )
+      alvo.jogadores = alvo.jogadores.map((_, i) => trazidos[i] ?? '')
+      return proximo
+    })
+  }
+
+  const escolherJogador = (indice: number, posicao: number, playerId: string) => {
+    setMontagem((atual) =>
+      atual.map((s, i) => {
+        if (i !== indice) {
+          // Ninguém em dois lugares: escolher aqui tira a pessoa de onde estava.
+          return { ...s, jogadores: s.jogadores.map((j) => (j === playerId ? '' : j)) }
+        }
+        return { ...s, jogadores: s.jogadores.map((j, k) => (k === posicao ? playerId : j)) }
+      }),
+    )
+  }
+
   return (
     <>
       <Navegacao />
@@ -307,7 +422,10 @@ export default function TorneioAdmin() {
                   onClick={() =>
                     void executar(
                       () =>
-                        supabase.from('tournaments').update({ status: proximo }).eq('id', torneio.id),
+                        supabase
+                          .from('tournaments')
+                          .update({ status: proximo })
+                          .eq('id', torneio.id),
                       `Campeonato agora está ${ROTULO_STATUS_TORNEIO[proximo].toLowerCase()}.`,
                     )
                   }
@@ -369,8 +487,8 @@ export default function TorneioAdmin() {
           <Cartao>
             <Texto>
               As equipes se formam pelo número de inscritos, com no máximo{' '}
-              <strong>{MAX_JOGADORES_POR_EQUIPE} pessoas por equipe</strong>. Não existe número
-              fixo a atingir: quem chegar, joga.
+              <strong>{MAX_JOGADORES_POR_EQUIPE} pessoas por equipe</strong>. Não existe número fixo
+              a atingir: quem chegar, joga.
             </Texto>
             <Texto $pequeno $mudo style={{ marginTop: 12 }}>
               {inscritos.length < MIN_PARTICIPANTES
@@ -620,77 +738,204 @@ export default function TorneioAdmin() {
             <Aviso>Nenhuma equipe formada — e o torneio já saiu da configuração.</Aviso>
           ) : (
             <Cartao>
-              <Texto $pequeno $mudo style={{ marginBottom: 16 }}>
-                Escolha quem entra no sorteio — por padrão, todos os inscritos. As equipes se
-                formam pelo número de escolhidos. O sorteio roda no servidor e a semente fica
-                registrada na auditoria, para que o resultado possa ser conferido depois.
-              </Texto>
-
-              <ListaSelecao>
-                {inscritos.map((j) => (
-                  <CampoMarcacao key={j.id}>
-                    <input
-                      type="checkbox"
-                      checked={selecionados.includes(j.id)}
-                      onChange={(ev) =>
-                        setSelecionados((atual) =>
-                          ev.target.checked ? [...atual, j.id] : atual.filter((x) => x !== j.id),
-                        )
-                      }
-                    />
-                    {j.nome}
-                  </CampoMarcacao>
-                ))}
-              </ListaSelecao>
-
-              <Formulario
-                style={{ marginTop: 20 }}
-                onSubmit={(ev) => {
-                  ev.preventDefault()
-                  const nomes = nomesEquipes
-                    .split(',')
-                    .map((n) => n.trim())
-                    .filter((n) => n !== '')
-                  void executar(
-                    () =>
-                      supabase.rpc('sortear_equipes', {
-                        p_tournament_id: torneio.id,
-                        p_player_ids: selecionados,
-                        p_nomes_equipes: nomes.length > 0 ? nomes : null,
-                        p_seed: null,
-                      }),
-                    'Equipes sorteadas.',
-                  )
-                }}
-              >
-                <Campo>
-                  Nomes das equipes, separados por vírgula (opcional)
-                  <Entrada
-                    value={nomesEquipes}
-                    placeholder="Alfa, Bravo, Charlie, Delta"
-                    onChange={(e) => setNomesEquipes(e.target.value)}
-                  />
-                </Campo>
-                {selecionados.length < MIN_PARTICIPANTES ? (
-                  <Aviso>
-                    {selecionados.length} selecionado(s). São necessários ao menos{' '}
-                    {MIN_PARTICIPANTES} para existir um confronto.
-                  </Aviso>
-                ) : (
-                  <Aviso>
-                    {selecionados.length} selecionados ={' '}
-                    {descreverComposicao(comporEquipes(selecionados.length))}.
-                  </Aviso>
-                )}
-                <Botao
-                  type="submit"
-                  disabled={ocupado || selecionados.length < MIN_PARTICIPANTES}
-                  $tamanho="lg"
+              {/* Sortear ou montar: a escolha é do administrador. A regra de
+                  composição é a mesma nos dois caminhos (§8). */}
+              <AbasDeModo role="tablist" aria-label="Como formar as equipes">
+                <AbaModo
+                  type="button"
+                  role="tab"
+                  aria-selected={modoFormacao === 'sorteio'}
+                  $ativa={modoFormacao === 'sorteio'}
+                  onClick={() => setModoFormacao('sorteio')}
                 >
-                  <Dices size={18} aria-hidden="true" />
-                  Sortear equipes
-                </Botao>
-              </Formulario>
+                  <Dices size={16} aria-hidden="true" />
+                  Sortear
+                </AbaModo>
+                <AbaModo
+                  type="button"
+                  role="tab"
+                  aria-selected={modoFormacao === 'manual'}
+                  $ativa={modoFormacao === 'manual'}
+                  onClick={() => setModoFormacao('manual')}
+                >
+                  <Hand size={16} aria-hidden="true" />
+                  Montar à mão
+                </AbaModo>
+              </AbasDeModo>
+
+              {modoFormacao === 'manual' ? (
+                <>
+                  <Texto $pequeno $mudo style={{ margin: '16px 0' }}>
+                    Você escolhe quem joga com quem. Quantas equipes existem continua saindo do
+                    número de inscritos — com {inscritos.length}{' '}
+                    {inscritos.length === 1 ? 'inscrito' : 'inscritos'},{' '}
+                    {composicaoAtual !== null ? descreverComposicao(composicaoAtual) : '—'}. Um time
+                    guardado preenche a dupla dele de uma vez.
+                  </Texto>
+
+                  {composicaoAtual === null ? (
+                    <Aviso>
+                      São necessários ao menos {MIN_PARTICIPANTES} inscritos para existir um
+                      confronto.
+                    </Aviso>
+                  ) : (
+                    <Formulario
+                      onSubmit={(ev) => {
+                        ev.preventDefault()
+                        void executar(
+                          () =>
+                            supabase.rpc('formar_equipes_manual', {
+                              p_tournament_id: torneio.id,
+                              p_equipes: montagem.map((s) => ({
+                                ...(s.clubId === '' ? {} : { club_id: s.clubId }),
+                                jogadores: s.jogadores,
+                              })),
+                            }),
+                          'Equipes montadas.',
+                        )
+                      }}
+                    >
+                      {montagem.map((slot, indice) => (
+                        <BlocoEquipe key={indice}>
+                          <Rotulo>
+                            {slot.jogadores.length === 2
+                              ? `Dupla ${indice + 1}`
+                              : 'Jogando sozinho'}
+                          </Rotulo>
+
+                          {clubes.length > 0 && (
+                            <Campo>
+                              Time guardado (opcional)
+                              <Selecao
+                                value={slot.clubId}
+                                disabled={ocupado}
+                                onChange={(ev) => aplicarClube(indice, ev.target.value)}
+                              >
+                                <option value="">novo time</option>
+                                {clubes.map((c) => (
+                                  <option
+                                    key={c.id}
+                                    value={c.id}
+                                    disabled={montagem.some(
+                                      (o, i) => i !== indice && o.clubId === c.id,
+                                    )}
+                                  >
+                                    {c.nome}
+                                  </option>
+                                ))}
+                              </Selecao>
+                            </Campo>
+                          )}
+
+                          {slot.jogadores.map((escolhido, posicao) => (
+                            <Campo key={posicao}>
+                              {slot.jogadores.length === 2 ? `Jogador ${posicao + 1}` : 'Jogador'}
+                              <Selecao
+                                value={escolhido}
+                                disabled={ocupado}
+                                onChange={(ev) => escolherJogador(indice, posicao, ev.target.value)}
+                              >
+                                <option value="">escolher…</option>
+                                {inscritos
+                                  .filter((j) => j.id === escolhido || !usadosNaMontagem.has(j.id))
+                                  .map((j) => (
+                                    <option key={j.id} value={j.id}>
+                                      {j.nome}
+                                    </option>
+                                  ))}
+                              </Selecao>
+                            </Campo>
+                          ))}
+                        </BlocoEquipe>
+                      ))}
+
+                      {!montagemCompleta && (
+                        <Aviso>Todo mundo precisa estar em alguma equipe antes de confirmar.</Aviso>
+                      )}
+                      <Botao type="submit" disabled={ocupado || !montagemCompleta} $tamanho="lg">
+                        <Hand size={18} aria-hidden="true" />
+                        Confirmar equipes
+                      </Botao>
+                    </Formulario>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Texto $pequeno $mudo style={{ margin: '16px 0' }}>
+                    Escolha quem entra no sorteio — por padrão, todos os inscritos. As equipes se
+                    formam pelo número de escolhidos. O sorteio roda no servidor e a semente fica
+                    registrada na auditoria, para que o resultado possa ser conferido depois.
+                  </Texto>
+
+                  <ListaSelecao>
+                    {inscritos.map((j) => (
+                      <CampoMarcacao key={j.id}>
+                        <input
+                          type="checkbox"
+                          checked={selecionados.includes(j.id)}
+                          onChange={(ev) =>
+                            setSelecionados((atual) =>
+                              ev.target.checked
+                                ? [...atual, j.id]
+                                : atual.filter((x) => x !== j.id),
+                            )
+                          }
+                        />
+                        {j.nome}
+                      </CampoMarcacao>
+                    ))}
+                  </ListaSelecao>
+
+                  <Formulario
+                    style={{ marginTop: 20 }}
+                    onSubmit={(ev) => {
+                      ev.preventDefault()
+                      const nomes = nomesEquipes
+                        .split(',')
+                        .map((n) => n.trim())
+                        .filter((n) => n !== '')
+                      void executar(
+                        () =>
+                          supabase.rpc('sortear_equipes', {
+                            p_tournament_id: torneio.id,
+                            p_player_ids: selecionados,
+                            p_nomes_equipes: nomes.length > 0 ? nomes : null,
+                            p_seed: null,
+                          }),
+                        'Equipes sorteadas.',
+                      )
+                    }}
+                  >
+                    <Campo>
+                      Nomes das equipes, separados por vírgula (opcional)
+                      <Entrada
+                        value={nomesEquipes}
+                        placeholder="Alfa, Bravo, Charlie, Delta"
+                        onChange={(e) => setNomesEquipes(e.target.value)}
+                      />
+                    </Campo>
+                    {selecionados.length < MIN_PARTICIPANTES ? (
+                      <Aviso>
+                        {selecionados.length} selecionado(s). São necessários ao menos{' '}
+                        {MIN_PARTICIPANTES} para existir um confronto.
+                      </Aviso>
+                    ) : (
+                      <Aviso>
+                        {selecionados.length} selecionados ={' '}
+                        {descreverComposicao(comporEquipes(selecionados.length))}.
+                      </Aviso>
+                    )}
+                    <Botao
+                      type="submit"
+                      disabled={ocupado || selecionados.length < MIN_PARTICIPANTES}
+                      $tamanho="lg"
+                    >
+                      <Dices size={18} aria-hidden="true" />
+                      Sortear equipes
+                    </Botao>
+                  </Formulario>
+                </>
+              )}
             </Cartao>
           )}
         </Bloco>
@@ -909,27 +1154,27 @@ export default function TorneioAdmin() {
             confrontos de uma vez, isso passou a ser todo torneio, inclusive os
             de teste que nunca rolaram. Histórico é partida DISPUTADA. */}
         <ZonaDeRisco>
-            <h2>
-              <AlertTriangle size={20} aria-hidden="true" />
-              Zona de risco
-            </h2>
-            <Texto $pequeno style={{ margin: '12px 0 16px' }}>
-              Excluir apaga o torneio de vez, com equipes, fases e partidas ainda não disputadas.
-              Só deixa de ser possível quando alguma partida já foi jogada: aí existe histórico, e
-              histórico não se apaga — nesse caso, encerre o campeonato.
-            </Texto>
-            {disputadas === 0 ? (
-              <Botao type="button" $variante="perigo" onClick={() => setConfirmandoExclusao(true)}>
-                <Trash2 size={16} aria-hidden="true" />
-                Excluir este torneio
-              </Botao>
-            ) : (
-              <Aviso>
-                Este torneio já tem {disputadas} partida(s) disputada(s) — isso é histórico e não
-                se apaga. Para tirá-lo do caminho, encerre o campeonato lá em cima.
-              </Aviso>
-            )}
-          </ZonaDeRisco>
+          <h2>
+            <AlertTriangle size={20} aria-hidden="true" />
+            Zona de risco
+          </h2>
+          <Texto $pequeno style={{ margin: '12px 0 16px' }}>
+            Excluir apaga o torneio de vez, com equipes, fases e partidas ainda não disputadas. Só
+            deixa de ser possível quando alguma partida já foi jogada: aí existe histórico, e
+            histórico não se apaga — nesse caso, encerre o campeonato.
+          </Texto>
+          {disputadas === 0 ? (
+            <Botao type="button" $variante="perigo" onClick={() => setConfirmandoExclusao(true)}>
+              <Trash2 size={16} aria-hidden="true" />
+              Excluir este torneio
+            </Botao>
+          ) : (
+            <Aviso>
+              Este torneio já tem {disputadas} partida(s) disputada(s) — isso é histórico e não se
+              apaga. Para tirá-lo do caminho, encerre o campeonato lá em cima.
+            </Aviso>
+          )}
+        </ZonaDeRisco>
       </Pagina>
 
       <Confirmacao

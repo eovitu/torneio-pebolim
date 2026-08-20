@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { Camera, Palette, Users } from 'lucide-react'
+import { Camera, Palette, Shield, Users } from 'lucide-react'
 import { Navegacao } from '../components/Navegacao'
 import { CartaoDePartida, GradeDeNumeros, LinhaDeJogador, Numero } from '../components/Cartoes'
 import { Artilharia } from '../components/Tabelas'
@@ -226,6 +226,28 @@ export default function Time() {
     await recarregar()
   }
 
+  /**
+   * Guardar a equipe como time permanente.
+   *
+   * Quem decide se pode é o banco: `salvar_equipe_como_clube` repete a mesma
+   * regra da personalização — administrador ou quem joga nela (§45).
+   */
+  const guardarComoClube = async () => {
+    if (equipe === null) return
+    setErroAcao(null)
+    setAviso(null)
+    setOcupado(true)
+    const { error } = await supabase.rpc('salvar_equipe_como_clube', { p_team_id: equipe.id })
+    setOcupado(false)
+    if (error !== null) {
+      setErroAcao(descreverErro(error))
+      return
+    }
+    setAviso('Time guardado. Ele pode ser escolhido inteiro no próximo campeonato.')
+    const { data } = await supabase.from('teams').select('*').eq('id', equipe.id).maybeSingle()
+    setEquipe(data)
+  }
+
   if (buscandoEquipe || (equipe !== null && carregando)) {
     return (
       <>
@@ -261,7 +283,8 @@ export default function Time() {
   // Espelha a policy `teams_update_admin_ou_integrante`. Esconder o botão é
   // conveniência: quem barra de fato é a RLS e o grant por coluna (§45).
   const souDoElenco =
-    jogador !== null && campeonato.elencos.some((l) => l.team_id === equipe.id && l.player_id === jogador.id)
+    jogador !== null &&
+    campeonato.elencos.some((l) => l.team_id === equipe.id && l.player_id === jogador.id)
   const podePersonalizar = ehAdmin || souDoElenco
   const elenco = campeonato.elencos
     .filter((l) => l.team_id === equipe.id)
@@ -391,6 +414,61 @@ export default function Time() {
           </Bloco>
         )}
 
+        {/*
+          O time que sobrevive ao torneio. `teams` é a participação neste
+          campeonato; guardar cria o CLUBE — a identidade permanente — e a
+          partir daí nome, escudo, descrição e dupla podem ser reaproveitados
+          no próximo torneio, com o histórico somando.
+        */}
+        <Bloco>
+          <TituloSecao>
+            <h2>
+              <Shield size={20} aria-hidden="true" />
+              Time permanente
+            </h2>
+          </TituloSecao>
+          <Cartao>
+            {equipe.club_id !== null ? (
+              <>
+                <Texto $pequeno $mudo style={{ marginBottom: 12 }}>
+                  Este é um time guardado: a personalização vale para todos os campeonatos que ele
+                  disputar, e a campanha soma.
+                </Texto>
+                <Acoes>
+                  <BotaoLink to={`/clubs/${equipe.club_id}`} $variante="contorno">
+                    Ver histórico completo do time
+                  </BotaoLink>
+                </Acoes>
+              </>
+            ) : (
+              <>
+                <Texto $pequeno $mudo style={{ marginBottom: 12 }}>
+                  Guardar transforma esta equipe em um time permanente: no próximo campeonato ela
+                  pode ser escolhida inteira, com o mesmo nome, o mesmo escudo e a mesma dupla — e o
+                  histórico passa a somar entre torneios.
+                </Texto>
+                {podePersonalizar ? (
+                  <Acoes>
+                    <Botao
+                      type="button"
+                      $variante="contorno"
+                      disabled={ocupado}
+                      onClick={() => void guardarComoClube()}
+                    >
+                      <Shield size={16} aria-hidden="true" />
+                      Guardar este time para sempre
+                    </Botao>
+                  </Acoes>
+                ) : (
+                  <Texto $pequeno $mudo>
+                    Quem guarda é o organizador do campeonato ou quem joga nesta equipe.
+                  </Texto>
+                )}
+              </>
+            )}
+          </Cartao>
+        </Bloco>
+
         <Bloco>
           <TituloSecao>
             <h2>
@@ -401,8 +479,7 @@ export default function Time() {
 
           {!podePersonalizar ? (
             <Texto $pequeno $mudo>
-              A identidade da equipe é definida por quem joga nela e pelo organizador do
-              campeonato.
+              A identidade da equipe é definida por quem joga nela e pelo organizador do campeonato.
             </Texto>
           ) : editando ? (
             <Cartao>

@@ -428,8 +428,63 @@ export type Database = {
           },
         ]
       }
+      clubs: {
+        Row: {
+          cor_primaria: string | null
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cor_primaria?: string | null
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          logo_url?: string | null
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cor_primaria?: string | null
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      club_members: {
+        Row: { club_id: string; created_at: string; player_id: string }
+        Insert: { club_id: string; created_at?: string; player_id: string }
+        Update: { club_id?: string; created_at?: string; player_id?: string }
+        Relationships: [
+          {
+            foreignKeyName: 'club_members_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'club_members_player_id_fkey'
+            columns: ['player_id']
+            isOneToOne: false
+            referencedRelation: 'players'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       teams: {
         Row: {
+          club_id: string | null
           cor_primaria: string | null
           created_at: string
           descricao: string | null
@@ -440,6 +495,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          club_id?: string | null
           cor_primaria?: string | null
           created_at?: string
           descricao?: string | null
@@ -450,6 +506,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          club_id?: string | null
           cor_primaria?: string | null
           created_at?: string
           descricao?: string | null
@@ -707,6 +764,14 @@ export type Database = {
       }
       sincronizar_escalacao: { Args: { p_match_id: string }; Returns: undefined }
       ressincronizar_escalacao: { Args: { p_match_id: string }; Returns: number }
+      salvar_equipe_como_clube: {
+        Args: { p_team_id: string }
+        Returns: Database['public']['Tables']['clubs']['Row']
+      }
+      formar_equipes_manual: {
+        Args: { p_tournament_id: string; p_equipes: Json }
+        Returns: { equipe: string; jogador: string; player_id: string; team_id: string }[]
+      }
       resetar_partida: {
         Args: { p_match_id: string }
         Returns: Database['public']['Tables']['matches']['Row']

@@ -18,7 +18,9 @@ export const Pagina = styled.main<{ $estreita?: boolean }>`
     $estreita === true ? theme.layout.appMaxWidth : theme.layout.contentMaxWidth};
   margin: 0 auto;
   padding: ${({ theme }) => theme.space[4]};
-  padding-bottom: calc(${({ theme }) => theme.layout.barraMobile} + ${({ theme }) => theme.space[10]});
+  padding-bottom: calc(
+    ${({ theme }) => theme.layout.barraMobile} + ${({ theme }) => theme.space[10]}
+  );
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space[6]};
@@ -62,12 +64,11 @@ export const Painel = styled.section`
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background:
-      repeating-linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.05) 0 1px,
-        transparent 1px 42px
-      );
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.05) 0 1px,
+      transparent 1px 42px
+    );
     opacity: 0.6;
   }
 
@@ -124,7 +125,11 @@ export const Texto = styled.p<{ $pequeno?: boolean; $mudo?: boolean; $claro?: bo
   font-size: ${({ theme, $pequeno }) =>
     $pequeno === true ? theme.fontSize.small : theme.fontSize.body};
   color: ${({ theme, $mudo, $claro }) =>
-    $claro === true ? theme.color.onDarkMuted : $mudo === true ? theme.color.muted : theme.color.textSoft};
+    $claro === true
+      ? theme.color.onDarkMuted
+      : $mudo === true
+        ? theme.color.muted
+        : theme.color.textSoft};
 `
 
 /** Grade responsiva de cartões. */

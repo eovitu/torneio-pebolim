@@ -30,14 +30,16 @@ import { Badge } from '../../ui/Etiqueta'
 
 /** Nome legível → identificador de URL. */
 function paraSlug(nome: string): string {
-  return nome
-    .normalize('NFD')
-    // Remove os acentos que o NFD separou das letras.
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
+  return (
+    nome
+      .normalize('NFD')
+      // Remove os acentos que o NFD separou das letras.
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60)
+  )
 }
 
 const Passos = styled.ol`
@@ -91,14 +93,8 @@ export default function Torneios() {
   const [erroCriacao, setErroCriacao] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
 
-  const ativos = useMemo(
-    () => itens.filter((i) => i.torneio.status !== 'ENCERRADO'),
-    [itens],
-  )
-  const encerrados = useMemo(
-    () => itens.filter((i) => i.torneio.status === 'ENCERRADO'),
-    [itens],
-  )
+  const ativos = useMemo(() => itens.filter((i) => i.torneio.status !== 'ENCERRADO'), [itens])
+  const encerrados = useMemo(() => itens.filter((i) => i.torneio.status === 'ENCERRADO'), [itens])
 
   const slugFinal = slugManual ? slug : paraSlug(nome)
   const nomeValido = nome.trim().length >= 2
@@ -180,7 +176,10 @@ export default function Torneios() {
                 <Badge $tom="marca">{ativos.length}</Badge>
               </TituloSecao>
               {ativos.length === 0 ? (
-                <Vazio titulo="Nenhum torneio ativo" descricao="Todos os campeonatos já foram encerrados." />
+                <Vazio
+                  titulo="Nenhum torneio ativo"
+                  descricao="Todos os campeonatos já foram encerrados."
+                />
               ) : (
                 <Grade $min="300px">
                   {ativos.map(({ torneio, equipes, participantes, aoVivo }) => (

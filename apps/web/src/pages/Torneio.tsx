@@ -16,7 +16,13 @@ import styled from 'styled-components'
 import { Check, LogIn, Play, Trophy, Users, WifiOff } from 'lucide-react'
 import { MIN_PARTICIPANTES } from '@pebolim/domain'
 import { Navegacao } from '../components/Navegacao'
-import { CartaoDePartida, CartaoDeTime, LinhaDeJogador, Numero, GradeDeNumeros } from '../components/Cartoes'
+import {
+  CartaoDePartida,
+  CartaoDeTime,
+  LinhaDeJogador,
+  Numero,
+  GradeDeNumeros,
+} from '../components/Cartoes'
 import { Artilharia, Classificacao } from '../components/Tabelas'
 import { useCampeonato, useMeuJogador } from '../dados/hooks'
 import { ROTULO_STATUS_TORNEIO, descreverErro, estaAoVivo } from '../dados/campeonato'
@@ -211,8 +217,16 @@ export default function Torneio() {
     )
   }
 
-  const { torneio, equipes, jogadores, elencos, participantes, partidas, classificacao, artilharia } =
-    campeonato
+  const {
+    torneio,
+    equipes,
+    jogadores,
+    elencos,
+    participantes,
+    partidas,
+    classificacao,
+    artilharia,
+  } = campeonato
 
   const jogadorPorId = new Map(jogadores.map((j) => [j.id, j]))
   const inscricoesAbertas = torneio.status === 'CONFIGURACAO'

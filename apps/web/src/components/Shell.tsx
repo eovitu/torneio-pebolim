@@ -14,7 +14,9 @@ export const Shell = styled.main`
   align-items: center;
   justify-content: center;
   padding: ${({ theme }) => theme.space[5]};
-  padding-bottom: calc(${({ theme }) => theme.layout.barraMobile} + ${({ theme }) => theme.space[6]});
+  padding-bottom: calc(
+    ${({ theme }) => theme.layout.barraMobile} + ${({ theme }) => theme.space[6]}
+  );
 `
 
 export const Card = styled.section`

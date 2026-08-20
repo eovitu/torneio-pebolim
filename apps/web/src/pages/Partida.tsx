@@ -300,8 +300,8 @@ const CartaoRodizio = styled.section`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.space[3]};
-  animation: pb-surgir ${({ theme }) => theme.motion.lento}
-    ${({ theme }) => theme.motion.entrada} both;
+  animation: pb-surgir ${({ theme }) => theme.motion.lento} ${({ theme }) => theme.motion.entrada}
+    both;
 
   h2 {
     font-size: ${({ theme }) => theme.fontSize.h4};
@@ -434,7 +434,9 @@ export default function Partida() {
   const tempoEsgotado = partida.status === 'LIVE' && isRegulationOver(relogio, instante)
   const tempo = formatClock(displayMs(relogio, partida.status, instante))
   const acabando =
-    partida.status === 'LIVE' && !tempoEsgotado && displayMs(relogio, partida.status, instante) <= 15000
+    partida.status === 'LIVE' &&
+    !tempoEsgotado &&
+    displayMs(relogio, partida.status, instante) <= 15000
 
   // Espelha is_operador_da_partida do banco. A decisão real é do servidor.
   const souEscalado = escalacao.some((l) => l.jogador.profile_id === user?.id)
@@ -661,9 +663,9 @@ export default function Partida() {
               para a próxima
             </h2>
             <Texto $pequeno $mudo>
-              {rodizio.sugestao.solitario_nome} está jogando sozinho. Pela regra do campeonato,
-              quem perdeu empresta um jogador para a próxima partida — e quem sobra passa a ser o
-              sozinho da vez, para ninguém ficar sempre sem dupla.
+              {rodizio.sugestao.solitario_nome} está jogando sozinho. Pela regra do campeonato, quem
+              perdeu empresta um jogador para a próxima partida — e quem sobra passa a ser o sozinho
+              da vez, para ninguém ficar sempre sem dupla.
             </Texto>
 
             <Troca>
@@ -803,7 +805,10 @@ export default function Partida() {
             <h2>Eventos</h2>
           </TituloSecao>
           {linhasDeEvento.length === 0 ? (
-            <Vazio titulo="Nada aconteceu ainda" descricao="Os lances aparecem aqui em tempo real." />
+            <Vazio
+              titulo="Nada aconteceu ainda"
+              descricao="Os lances aparecem aqui em tempo real."
+            />
           ) : (
             <Cartao $compacto>
               <Feed>

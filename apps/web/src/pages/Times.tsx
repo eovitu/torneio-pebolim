@@ -6,12 +6,13 @@
  * uma tela vazia sem explicação (§20 do redesign).
  */
 
-import { Users } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Shield, Users } from 'lucide-react'
 import { Navegacao } from '../components/Navegacao'
 import { CartaoDeTime } from '../components/Cartoes'
-import { useMeusTimes } from '../dados/hooks'
+import { useMeusTimes, useMeusClubes } from '../dados/hooks'
 import { useAuth } from '../auth/useAuth'
-import { Bloco, Grade, Pagina, Rotulo, Texto, TituloSecao } from '../ui/Superficie'
+import { Bloco, Cartao, Grade, Pagina, Rotulo, Texto, TituloSecao } from '../ui/Superficie'
 import { BotaoLink } from '../ui/Botao'
 import { Carregando, Vazio } from '../ui/Estados'
 import { ROTULO_STATUS_TORNEIO } from '../dados/campeonato'
@@ -19,6 +20,7 @@ import { ROTULO_STATUS_TORNEIO } from '../dados/campeonato'
 export default function Times() {
   const { session } = useAuth()
   const { times, carregando } = useMeusTimes()
+  const { clubes } = useMeusClubes()
 
   return (
     <>
@@ -69,6 +71,32 @@ export default function Times() {
               />
             ))}
           </Grade>
+        )}
+
+        {/* Times permanentes: a identidade que atravessa campeonatos. */}
+        {clubes.length > 0 && (
+          <Bloco>
+            <TituloSecao>
+              <h2>
+                <Shield size={20} aria-hidden="true" />
+                Times permanentes
+              </h2>
+            </TituloSecao>
+            <Texto $pequeno $mudo style={{ marginBottom: 12 }}>
+              Estes times existem fora de um campeonato só. A campanha deles soma tudo o que já
+              jogaram, e podem ser escolhidos inteiros no próximo torneio.
+            </Texto>
+            <Grade $min="320px">
+              {clubes.map(({ clube, integrantes }) => (
+                <Cartao key={clube.id} as={Link} to={`/clubs/${clube.id}`}>
+                  <strong>{clube.nome}</strong>
+                  <Texto $pequeno $mudo>
+                    {integrantes.map((j) => j.nome).join(' · ') || 'sem dupla definida'}
+                  </Texto>
+                </Cartao>
+              ))}
+            </Grade>
+          </Bloco>
         )}
 
         <TituloSecao>
