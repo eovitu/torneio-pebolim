@@ -200,8 +200,14 @@ export default function TorneioAdmin() {
   const [modoFormacao, setModoFormacao] = useState<'sorteio' | 'manual'>('sorteio')
   /** Ordem das equipes no chaveamento da Copa: a posição na lista é a posição na chave. */
   const [ordemDaChave, setOrdemDaChave] = useState<string[]>([])
-  /** Uma entrada por equipe a formar, na ordem: duplas primeiro, sozinhos depois. */
-  const [montagem, setMontagem] = useState<{ clubId: string; jogadores: string[] }[]>([])
+  /**
+   * Uma entrada por equipe a formar. O tamanho é livre — 1 ou 2 jogadores,
+   * nunca mais — e quem decide quantas equipes de cada tamanho existem é o
+   * administrador, equipe por equipe.
+   */
+  const [montagem, setMontagem] = useState<{ nome: string; clubId: string; jogadores: string[] }[]>(
+    [],
+  )
 
   const carregar = useCallback(async () => {
     const [t, p, e, tp, part, f, m, perf, cl, cm] = await Promise.all([
@@ -277,26 +283,31 @@ export default function TorneioAdmin() {
   /**
    * Slots da montagem manual.
    *
-   * A FORMA vem da regra, não do administrador: quantas duplas e quantos
-   * sozinhos é o que o número de inscritos determina (§8). O que ele escolhe é
-   * quem joga com quem. O servidor revalida exatamente isso.
+   * O tamanho de cada equipe (1 ou 2) é decisão do administrador — não vem
+   * mais da quantidade de inscritos. O servidor revalida que ninguém passa de
+   * 2 e que todo mundo acaba em alguma equipe (§8).
    */
-  useEffect(() => {
-    if (composicaoAtual === null) {
-      setMontagem([])
-      return
-    }
-    setMontagem((atual) => {
-      const mesmaForma =
-        atual.length === composicaoAtual.tamanhos.length &&
-        atual.every((s, i) => s.jogadores.length === composicaoAtual.tamanhos[i])
-      if (mesmaForma) return atual
-      return composicaoAtual.tamanhos.map((tamanho) => ({
-        clubId: '',
-        jogadores: Array.from({ length: tamanho }, () => ''),
-      }))
-    })
-  }, [composicaoAtual])
+  const adicionarEquipe = () => {
+    setMontagem((atual) => [...atual, { nome: '', clubId: '', jogadores: [''] }])
+  }
+
+  const removerEquipe = (indice: number) => {
+    setMontagem((atual) => atual.filter((_, i) => i !== indice))
+  }
+
+  const renomearEquipe = (indice: number, nome: string) => {
+    setMontagem((atual) => atual.map((s, i) => (i === indice ? { ...s, nome } : s)))
+  }
+
+  const alternarDupla = (indice: number, dupla: boolean) => {
+    setMontagem((atual) =>
+      atual.map((s, i) => {
+        if (i !== indice) return s
+        const jogadores = dupla ? [...s.jogadores, ''].slice(0, 2) : [s.jogadores[0] ?? '']
+        return { ...s, jogadores }
+      }),
+    )
+  }
 
   // A chave começa na ordem em que as equipes aparecem; o admin reordena.
   useEffect(() => {
@@ -785,14 +796,14 @@ export default function TorneioAdmin() {
               {modoFormacao === 'manual' ? (
                 <>
                   <Texto $pequeno $mudo style={{ margin: '16px 0' }}>
-                    Você escolhe quem joga com quem. Quantas equipes existem continua saindo do
-                    número de inscritos — com {inscritos.length}{' '}
-                    {inscritos.length === 1 ? 'inscrito' : 'inscritos'},{' '}
-                    {composicaoAtual !== null ? descreverComposicao(composicaoAtual) : '—'}. Um time
-                    guardado preenche a dupla dele de uma vez.
+                    Monte as equipes uma de cada vez: escolha quem entra — 1 pessoa sozinha ou 2 em
+                    dupla, nunca mais — e dê um nome a ela. Com {inscritos.length}{' '}
+                    {inscritos.length === 1 ? 'inscrito' : 'inscritos'}, todos precisam acabar em
+                    alguma equipe antes de confirmar. Um time guardado preenche a dupla dele de uma
+                    vez.
                   </Texto>
 
-                  {composicaoAtual === null ? (
+                  {inscritos.length < MIN_PARTICIPANTES ? (
                     <Aviso>
                       São necessários ao menos {MIN_PARTICIPANTES} inscritos para existir um
                       confronto.
@@ -806,6 +817,7 @@ export default function TorneioAdmin() {
                             supabase.rpc('formar_equipes_manual', {
                               p_tournament_id: torneio.id,
                               p_equipes: montagem.map((s) => ({
+                                ...(s.nome.trim() === '' ? {} : { nome: s.nome.trim() }),
                                 ...(s.clubId === '' ? {} : { club_id: s.clubId }),
                                 jogadores: s.jogadores,
                               })),
@@ -814,59 +826,99 @@ export default function TorneioAdmin() {
                         )
                       }}
                     >
-                      {montagem.map((slot, indice) => (
-                        <BlocoEquipe key={indice}>
-                          <Rotulo>
-                            {slot.jogadores.length === 2
-                              ? `Dupla ${indice + 1}`
-                              : 'Jogando sozinho'}
-                          </Rotulo>
+                      {montagem.map((slot, indice) => {
+                        const dupla = slot.jogadores.length === 2
+                        return (
+                          <BlocoEquipe key={indice}>
+                            <Rotulo>Equipe {indice + 1}</Rotulo>
 
-                          {clubes.length > 0 && (
                             <Campo>
-                              Time guardado (opcional)
-                              <Selecao
-                                value={slot.clubId}
+                              Nome da equipe (opcional)
+                              <Entrada
+                                value={slot.nome}
+                                placeholder={`Equipe ${indice + 1}`}
                                 disabled={ocupado}
-                                onChange={(ev) => aplicarClube(indice, ev.target.value)}
-                              >
-                                <option value="">novo time</option>
-                                {clubes.map((c) => (
-                                  <option
-                                    key={c.id}
-                                    value={c.id}
-                                    disabled={montagem.some(
-                                      (o, i) => i !== indice && o.clubId === c.id,
-                                    )}
-                                  >
-                                    {c.nome}
-                                  </option>
-                                ))}
-                              </Selecao>
+                                onChange={(ev) => renomearEquipe(indice, ev.target.value)}
+                              />
                             </Campo>
-                          )}
 
-                          {slot.jogadores.map((escolhido, posicao) => (
-                            <Campo key={posicao}>
-                              {slot.jogadores.length === 2 ? `Jogador ${posicao + 1}` : 'Jogador'}
-                              <Selecao
-                                value={escolhido}
-                                disabled={ocupado}
-                                onChange={(ev) => escolherJogador(indice, posicao, ev.target.value)}
-                              >
-                                <option value="">escolher…</option>
-                                {inscritos
-                                  .filter((j) => j.id === escolhido || !usadosNaMontagem.has(j.id))
-                                  .map((j) => (
-                                    <option key={j.id} value={j.id}>
-                                      {j.nome}
+                            {clubes.length > 0 && (
+                              <Campo>
+                                Time guardado (opcional)
+                                <Selecao
+                                  value={slot.clubId}
+                                  disabled={ocupado}
+                                  onChange={(ev) => aplicarClube(indice, ev.target.value)}
+                                >
+                                  <option value="">novo time</option>
+                                  {clubes.map((c) => (
+                                    <option
+                                      key={c.id}
+                                      value={c.id}
+                                      disabled={montagem.some(
+                                        (o, i) => i !== indice && o.clubId === c.id,
+                                      )}
+                                    >
+                                      {c.nome}
                                     </option>
                                   ))}
-                              </Selecao>
-                            </Campo>
-                          ))}
-                        </BlocoEquipe>
-                      ))}
+                                </Selecao>
+                              </Campo>
+                            )}
+
+                            {slot.jogadores.map((escolhido, posicao) => (
+                              <Campo key={posicao}>
+                                {dupla ? `Jogador ${posicao + 1}` : 'Jogador'}
+                                <Selecao
+                                  value={escolhido}
+                                  disabled={ocupado}
+                                  onChange={(ev) => escolherJogador(indice, posicao, ev.target.value)}
+                                >
+                                  <option value="">escolher…</option>
+                                  {inscritos
+                                    .filter((j) => j.id === escolhido || !usadosNaMontagem.has(j.id))
+                                    .map((j) => (
+                                      <option key={j.id} value={j.id}>
+                                        {j.nome}
+                                      </option>
+                                    ))}
+                                </Selecao>
+                              </Campo>
+                            ))}
+
+                            <CampoMarcacao>
+                              <input
+                                type="checkbox"
+                                checked={dupla}
+                                disabled={ocupado}
+                                onChange={(ev) => alternarDupla(indice, ev.target.checked)}
+                              />
+                              Dupla (2 jogadores)
+                            </CampoMarcacao>
+
+                            <Botao
+                              type="button"
+                              $variante="fantasma"
+                              $tamanho="sm"
+                              disabled={ocupado}
+                              onClick={() => removerEquipe(indice)}
+                            >
+                              <Trash2 size={14} aria-hidden="true" />
+                              Remover esta equipe
+                            </Botao>
+                          </BlocoEquipe>
+                        )
+                      })}
+
+                      <Botao
+                        type="button"
+                        $variante="contorno"
+                        disabled={ocupado}
+                        onClick={adicionarEquipe}
+                      >
+                        <Plus size={16} aria-hidden="true" />
+                        Adicionar equipe
+                      </Botao>
 
                       {!montagemCompleta && (
                         <Aviso>Todo mundo precisa estar em alguma equipe antes de confirmar.</Aviso>
