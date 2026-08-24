@@ -54,6 +54,38 @@ const Cabecalho = styled.header`
   }
 `
 
+/**
+ * A primeira regra da lista fica fixa no topo, como um cabeçalho, enquanto o
+ * resto do conteúdo rola por baixo dela — só ela; as demais seções continuam
+ * dentro de `Corpo`, que é quem rola.
+ */
+const RegraFixa = styled.section`
+  flex-shrink: 0;
+  padding: ${({ theme }) => theme.space[4]} ${({ theme }) => theme.space[4]} ${({ theme }) =>
+    theme.space[3]};
+  border-bottom: 2px solid ${({ theme }) => theme.color.divider};
+  background: ${({ theme }) => theme.color.neutral[100]};
+
+  h3 {
+    margin: 0 0 ${({ theme }) => theme.space[2]};
+    font-size: 14px;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: ${({ theme }) => theme.space[4]};
+  }
+
+  li {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  li + li {
+    margin-top: ${({ theme }) => theme.space[2]};
+  }
+`
+
 const Corpo = styled.div`
   /* "min-height: 0" e o que permite este item ENCOLHER dentro do flex. Sem
      ele o padrao "min-height: auto" impede o encolhimento: a caixa estoura os
@@ -130,6 +162,10 @@ interface Props {
 export function ModalRegras({ onCancelar, onAceitar, aviso }: Props) {
   const corpoRef = useRef<HTMLDivElement>(null)
   const [leuTudo, setLeuTudo] = useState(false)
+  // RULES é uma constante do domínio com pelo menos uma seção — garantida em
+  // tempo de compilação por quem a escreve, não em tempo de execução.
+  const primeiraRegra = RULES[0]!
+  const demaisRegras = RULES.slice(1)
 
   const verificarRolagem = useCallback(() => {
     const el = corpoRef.current
@@ -181,8 +217,17 @@ export function ModalRegras({ onCancelar, onAceitar, aviso }: Props) {
           <p>Versão {RULES_VERSION}</p>
         </Cabecalho>
 
+        <RegraFixa>
+          <h3>{primeiraRegra.title}</h3>
+          <ul>
+            {primeiraRegra.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </RegraFixa>
+
         <Corpo ref={corpoRef} onScroll={verificarRolagem} tabIndex={0} data-testid="regras-corpo">
-          {RULES.map((secao) => (
+          {demaisRegras.map((secao) => (
             <section key={secao.id}>
               <h3>{secao.title}</h3>
               <ul>

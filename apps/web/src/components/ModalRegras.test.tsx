@@ -53,6 +53,17 @@ describe('modal de regras', () => {
     ).toBeInTheDocument()
   })
 
+  it('mantém a primeira regra fixa fora da área que rola, e o resto dentro dela', () => {
+    const { corpo } = montar()
+    const primeira = RULES[0]!
+    const demais = RULES.slice(1)
+
+    expect(corpo).not.toHaveTextContent(primeira.title)
+    for (const secao of demais) {
+      expect(corpo).toHaveTextContent(secao.title)
+    }
+  })
+
   it('mantém o aceite bloqueado enquanto o texto não foi lido até o fim', () => {
     comOverflow(2000, 500)
     const { corpo, botaoAceitar } = montar()
