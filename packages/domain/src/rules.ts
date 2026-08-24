@@ -45,9 +45,7 @@ export const RULES: readonly RuleSection[] = [
     title: 'Gol de goleiro',
     items: [
       'O gol de goleiro vale 2 — sempre, em placar, saldo, estatísticas e artilharia.',
-      'É gol de goleiro quando a bola sai diretamente do goleiro e entra.',
-      'Também é gol de goleiro quando a bola sai do goleiro, bate na parede e entra.',
-      'Também é gol de goleiro quando a bola sai do goleiro, bate em jogador adversário e entra.',
+      'É gol de goleiro quando a bola sai do goleiro e entra: direto, batendo na parede, ou batendo em jogador adversário.',
       'Se a bola bater primeiro em jogador do próprio time, o gol é considerado normal.',
     ],
   },
@@ -96,8 +94,7 @@ export const RULES: readonly RuleSection[] = [
       'No mata-mata a partida não pode terminar empatada.',
       'Se o tempo regulamentar terminar empatado, a partida entra em gol de ouro.',
       'No gol de ouro o cronômetro passa a contar progressivamente a partir de 00:00, sem limite de tempo.',
-      'O próximo gol válido encerra a partida e define o vencedor.',
-      'Gol normal, gol de goleiro e gol contra encerram a partida no gol de ouro.',
+      'O próximo gol válido — normal, de goleiro ou contra — encerra a partida e define o vencedor.',
     ],
   },
   {
