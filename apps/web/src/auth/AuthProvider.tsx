@@ -73,11 +73,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!ativo) return
       setSession(novaSessao)
       setCarregando(false)
-      // Sair, ou entrar com outra conta, exige confirmar as regras de novo.
-      if (novaSessao === null || novaSessao.user.id !== usuarioConfirmado.current) {
+
+      // Só sair ou entrar com outra conta exige confirmar as regras de novo.
+      // TOKEN_REFRESHED e USER_UPDATED nunca são login — o Supabase dispara
+      // TOKEN_REFRESHED sozinho quando o token é renovado (ex.: celular
+      // voltando de segundo plano) e USER_UPDATED em qualquer alteração do
+      // usuário (ex.: troca de senha em Perfil). Comparar o id em QUALQUER
+      // evento, como antes, fazia esses dois derrubarem a confirmação por um
+      // instante de corrida e reabrir o modal no meio da mesma sessão.
+      if (evento === 'SIGNED_OUT') {
+        usuarioConfirmado.current = null
+        setRegrasConfirmadas(false)
+      } else if (
+        (evento === 'SIGNED_IN' || evento === 'INITIAL_SESSION') &&
+        novaSessao !== null &&
+        novaSessao.user.id !== usuarioConfirmado.current
+      ) {
         usuarioConfirmado.current = null
         setRegrasConfirmadas(false)
       }
+
       if (novaSessao && (evento === 'SIGNED_IN' || evento === 'INITIAL_SESSION')) {
         void garantirAceiteRegistrado(novaSessao)
       }

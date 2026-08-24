@@ -121,6 +121,28 @@ describe('confirmação das regras por sessão', () => {
     expect(estado()).toBe('confirmado')
   })
 
+  it('NÃO reaparece com várias renovações de token seguidas, na mesma sessão', async () => {
+    // Regressão: o celular voltando de segundo plano várias vezes na mesma
+    // sessão dispara TOKEN_REFRESHED em sequência — nenhuma delas é login.
+    await montar(sessaoDe('u1'))
+    await act(async () => {
+      screen.getByRole('button', { name: 'confirmar' }).click()
+    })
+    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
+    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
+    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
+    expect(estado()).toBe('confirmado')
+  })
+
+  it('NÃO reaparece quando o usuário é atualizado (ex.: troca de senha)', async () => {
+    await montar(sessaoDe('u1'))
+    await act(async () => {
+      screen.getByRole('button', { name: 'confirmar' }).click()
+    })
+    await emitir('USER_UPDATED', sessaoDe('u1'))
+    expect(estado()).toBe('confirmado')
+  })
+
   it('volta a pendente ao sair', async () => {
     await montar(sessaoDe('u1'))
     await act(async () => {
