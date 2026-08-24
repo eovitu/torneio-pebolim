@@ -204,10 +204,20 @@ const NomeJogador = styled.div`
   min-width: 0;
 
   span {
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+`
+
+/** Nome truncado dentro de um botão de largura cheia (ex.: escolha do gol contra). */
+const NomeNoBotao = styled.span`
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `
 
 const ParDeBotoes = styled.div`
@@ -863,7 +873,7 @@ export default function Partida() {
               if (equipeId !== null) registrar('OWN_GOAL', equipeId, l.player_id)
             }}
           >
-            {l.jogador.nome}
+            <NomeNoBotao title={l.jogador.nome}>{l.jogador.nome}</NomeNoBotao>
           </Botao>
         ))}
       </Modal>
