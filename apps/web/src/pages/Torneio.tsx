@@ -24,6 +24,7 @@ import {
   GradeDeNumeros,
 } from '../components/Cartoes'
 import { Artilharia, Classificacao } from '../components/Tabelas'
+import { ChaveDaCopa } from '../components/ChaveDaCopa'
 import { useCampeonato, useMeuJogador } from '../dados/hooks'
 import { ROTULO_STATUS_TORNEIO, descreverErro, estaAoVivo } from '../dados/campeonato'
 import { supabase } from '../lib/supabase'
@@ -44,24 +45,6 @@ const ABAS = [
 ] as const
 
 type Aba = (typeof ABAS)[number]['id']
-
-/** Seções da chave, na ordem em que fazem sentido para quem acompanha. */
-const GRUPOS_DA_CHAVE = [
-  { chave: 'VENCEDORES', titulo: 'Chave dos vencedores' },
-  { chave: 'PERDEDORES', titulo: 'Chave dos perdedores' },
-  { chave: 'FINAIS', titulo: 'Finais' },
-] as const
-
-/**
- * A que parte da chave um confronto pertence, pelo identificador do slot
- * (`V2-1`, `P3-2`, `F`, `FR`) — o mesmo que o domínio monta.
- */
-function chaveDoSlot(slot: string | null): string | null {
-  if (slot === null) return null
-  if (slot.startsWith('V')) return 'VENCEDORES'
-  if (slot.startsWith('P')) return 'PERDEDORES'
-  return 'FINAIS'
-}
 
 const BarraAbas = styled.div`
   display: flex;
@@ -188,13 +171,12 @@ export default function Torneio() {
     [campeonato, jogador],
   )
 
-  /** Partidas da Copa, se existir uma fase dessas neste torneio. */
-  const daCopa = useMemo(
-    () => campeonato?.partidas.filter((p) => p.linha.phase_kind === 'DOUBLE_ELIMINATION') ?? [],
+  /** Fase da Copa, se existir uma dessas neste torneio. */
+  const faseDaCopa = useMemo(
+    () => campeonato?.fases.find((f) => f.kind === 'DOUBLE_ELIMINATION'),
     [campeonato],
   )
-  const temCopa =
-    daCopa.length > 0 || (campeonato?.fases.some((f) => f.kind === 'DOUBLE_ELIMINATION') ?? false)
+  const temCopa = faseDaCopa !== undefined
 
   const executar = async (
     acao: () => PromiseLike<{ error: { message: string } | null }>,
@@ -433,7 +415,7 @@ export default function Torneio() {
           precisa ver de onde cada equipe veio e para onde ela vai — sobretudo
           que perder uma vez não é o fim.
         */}
-        {aba === 'chave' && temCopa && (
+        {aba === 'chave' && temCopa && faseDaCopa !== undefined && (
           <>
             <Bloco>
               <Texto $pequeno $mudo>
@@ -442,35 +424,15 @@ export default function Torneio() {
                 joga-se uma segunda final para decidir o título.
               </Texto>
             </Bloco>
-            {GRUPOS_DA_CHAVE.map(({ chave, titulo }) => {
-              const desteGrupo = daCopa.filter((p) => chaveDoSlot(p.linha.slot) === chave)
-              if (desteGrupo.length === 0) return null
-              return (
-                <Bloco key={chave}>
-                  <TituloSecao>
-                    <h2>{titulo}</h2>
-                    <Badge $tom="marca">{desteGrupo.length}</Badge>
-                  </TituloSecao>
-                  <Lista>
-                    {desteGrupo.map((p) => (
-                      <CartaoDePartida
-                        key={p.linha.id}
-                        partida={p.linha}
-                        nomeA={p.nomeA}
-                        nomeB={p.nomeB}
-                        placarA={p.placarA}
-                        placarB={p.placarB}
-                      />
-                    ))}
-                  </Lista>
-                </Bloco>
-              )
-            })}
-            {daCopa.length === 0 && (
+            {faseDaCopa.chaveamento === null ? (
               <Vazio
                 titulo="A chave ainda não foi montada"
                 descricao="Assim que o organizador gerar o chaveamento, os confrontos aparecem aqui — e os seguintes surgem sozinhos conforme as partidas terminam."
               />
+            ) : (
+              <Bloco>
+                <ChaveDaCopa fase={faseDaCopa} partidas={partidas} equipes={equipes} />
+              </Bloco>
             )}
           </>
         )}
