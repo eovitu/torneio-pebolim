@@ -1053,7 +1053,9 @@ export default function TorneioAdmin() {
                     onChange={(e) => setTipoFase(e.target.value as Enums<'phase_kind'>)}
                   >
                     <option value="GROUP">Fase de grupos — empate permitido</option>
-                    <option value="KNOCKOUT">Mata-mata — empate leva a gol de ouro</option>
+                    <option value="KNOCKOUT">
+                      Mata-mata / chaveamento livre — confrontos um a um, sem calendário automático
+                    </option>
                     <option value="DOUBLE_ELIMINATION">
                       Copa (eliminação dupla) — só sai com duas derrotas
                     </option>
@@ -1191,8 +1193,10 @@ export default function TorneioAdmin() {
                       }}
                     >
                       <Texto $pequeno $mudo>
-                        Escolha o confronto. O sistema não monta chaveamento sozinho: quem avança é
-                        decisão sua.
+                        Chaveamento livre: crie a próxima partida quando quiser, escolhendo
+                        qualquer confronto — inclusive repetindo uma equipe que já jogou. O sistema
+                        não monta calendário nem elimina ninguém automaticamente: quem avança, e
+                        quantas vezes cada equipe joga, é decisão sua.
                       </Texto>
                       <Grade2>
                         <Selecao
@@ -1229,7 +1233,7 @@ export default function TorneioAdmin() {
                         </Selecao>
                       </Grade2>
                       <Botao type="submit" $variante="contorno" disabled={ocupado}>
-                        Criar confronto
+                        Criar próxima partida
                       </Botao>
                     </Formulario>
                   )}
