@@ -452,8 +452,9 @@ export default function Partida() {
   const emAndamento =
     partida.status === 'LIVE' || partida.status === 'PAUSED' || partida.status === 'GOLDEN_GOAL'
 
-  const golLiberado =
-    podeOperar && canRegisterGoal(partida.status) && !tempoEsgotado && !ocupado && relogioPronto
+  // A partida só trava de verdade quando o operador clica em "Encerrar": o
+  // tempo esgotado (tempoEsgotado) é só indicativo visual, não bloqueia gol.
+  const golLiberado = podeOperar && canRegisterGoal(partida.status) && !ocupado && relogioPronto
 
   const registrar = (tipo: GoalEventType, teamId: string, playerId: string) =>
     void executar(() =>
