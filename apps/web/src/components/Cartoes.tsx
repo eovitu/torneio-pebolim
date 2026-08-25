@@ -17,6 +17,7 @@ import { ROTULO_STATUS_PARTIDA, ROTULO_STATUS_TORNEIO, estaAoVivo } from '../dad
 import { Avatar, Badge, PilhaAvatares, PontoAoVivo } from '../ui/Etiqueta'
 import { Rotulo, Texto } from '../ui/Superficie'
 import { cartaoInterativo } from '../ui/estilos'
+import { truncarNome } from '../ui/texto'
 import { tomDoStatusDaPartida, tomDoStatusDoTorneio } from './tons'
 
 /* -------------------------------------------------------------------------- */
@@ -505,8 +506,8 @@ export function LinhaDeJogador({
   return (
     <LinhaJogadorLink to={`/players/${jogador.id}`}>
       <Avatar nome={jogador.nome} url={jogador.foto_url} tamanho="sm" />
-      <strong>
-        {jogador.nome}
+      <strong title={jogador.nome}>
+        {truncarNome(jogador.nome)}
         {detalhe !== undefined && (
           <Texto as="span" $pequeno $mudo>
             {' · '}

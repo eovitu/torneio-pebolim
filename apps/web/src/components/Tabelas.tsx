@@ -18,6 +18,7 @@ import type { ScorerRow, StandingsRow } from '@pebolim/domain'
 import { Avatar, Badge } from '../ui/Etiqueta'
 import { RolagemHorizontal, Texto } from '../ui/Superficie'
 import { midia } from '../design-system/tokens'
+import { truncarNome } from '../ui/texto'
 import type { LinhaJogador } from '../dados/campeonato'
 
 /* -------------------------------------------------------------------------- */
@@ -354,7 +355,7 @@ export function Artilharia({
               <Medalha aria-hidden="true">{MEDALHAS[i] ?? l.position}</Medalha>
               <Avatar nome={l.playerName} url={jogador?.foto_url} tamanho="sm" />
               <NomeArtilheiro>
-                <strong>{l.playerName}</strong>
+                <strong title={l.playerName}>{truncarNome(l.playerName)}</strong>
                 <span>
                   {l.teamName !== '' ? `${l.teamName} · ` : ''}
                   {l.goals} {l.goals === 1 ? 'gol' : 'gols'}

@@ -41,6 +41,7 @@ import { Acoes, Botao } from '../ui/Botao'
 import { Carregando, Erro, Vazio } from '../ui/Estados'
 import { Avatar, Badge, PontoAoVivo } from '../ui/Etiqueta'
 import { Confirmacao, Modal } from '../ui/Modal'
+import { truncarNome } from '../ui/texto'
 import { midia } from '../design-system/tokens'
 
 const ROTULO_FASE: Record<string, string> = {
@@ -540,7 +541,7 @@ export default function Partida() {
           <BlocoJogador key={l.player_id}>
             <NomeJogador>
               <Avatar nome={l.jogador.nome} url={l.jogador.foto_url} tamanho="xs" />
-              <span title={l.jogador.nome}>{l.jogador.nome}</span>
+              <span title={l.jogador.nome}>{truncarNome(l.jogador.nome)}</span>
             </NomeJogador>
             <ParDeBotoes>
               <BotaoGol
@@ -831,7 +832,9 @@ export default function Partida() {
                   const removido = linhasDeEvento.some(
                     (r) => r.type === 'GOAL_REMOVED' && r.removed_event_id === e.id,
                   )
-                  const autor = escalacao.find((l) => l.player_id === e.player_id)?.jogador.nome
+                  const autorCompleto = escalacao.find((l) => l.player_id === e.player_id)?.jogador
+                    .nome
+                  const autor = autorCompleto !== undefined ? truncarNome(autorCompleto) : undefined
                   const texto = `${ROTULO_EVENTO[e.type] ?? e.type}${autor !== undefined ? ` — ${autor}` : ''}`
                   return (
                     <li key={e.id}>
@@ -873,7 +876,7 @@ export default function Partida() {
               if (equipeId !== null) registrar('OWN_GOAL', equipeId, l.player_id)
             }}
           >
-            <NomeNoBotao title={l.jogador.nome}>{l.jogador.nome}</NomeNoBotao>
+            <NomeNoBotao title={l.jogador.nome}>{truncarNome(l.jogador.nome)}</NomeNoBotao>
           </Botao>
         ))}
       </Modal>
