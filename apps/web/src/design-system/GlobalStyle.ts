@@ -27,6 +27,13 @@ export const GlobalStyle = createGlobalStyle`
     -webkit-font-smoothing: antialiased;
   }
 
+  html {
+    /* Reserva o espaço da barra sticky ao pular para uma âncora (#hash, foco
+       via teclado), senão o alvo nasce por baixo dela — mesma família de bug
+       da barra cortando o topo da página (ver RolagemAoNavegar.tsx). */
+    scroll-padding-top: ${({ theme }) => theme.layout.barraTopo};
+  }
+
   body {
     min-height: 100dvh;
     /* Nunca rolar de lado: tabela larga rola dentro do próprio contêiner. */

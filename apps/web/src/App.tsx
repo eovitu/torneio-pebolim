@@ -5,6 +5,7 @@ import { GlobalStyle } from './design-system/GlobalStyle'
 import { theme } from './design-system/theme'
 import { AuthProvider } from './auth/AuthProvider'
 import { PortaoDeRegras } from './components/PortaoDeRegras'
+import { RolagemAoNavegar } from './components/RolagemAoNavegar'
 import { RotaAdmin } from './components/Admin'
 import { Carregando } from './ui/Estados'
 import { Pagina } from './ui/Superficie'
@@ -57,6 +58,7 @@ export default function App() {
       <GlobalStyle />
       <AuthProvider>
         <PortaoDeRegras>
+          <RolagemAoNavegar />
           <Suspense fallback={<Espera />}>
             <Routes>
               <Route path="/" element={<BemVindo />} />
