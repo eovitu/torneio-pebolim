@@ -291,15 +291,29 @@ export function ChaveDoMataMata({
         </Ala>
       )}
 
-      {podio !== null && podio.campeao !== null && (
-        <Ala>
-          <TituloAla>Pódio</TituloAla>
-          <Eliminadas>
-            🥇 {nomeDaEquipe(equipes, podio.campeao)} · 🥈 {nomeDaEquipe(equipes, podio.vice)}
-            {podio.terceiro !== null && <> · 🥉 {nomeDaEquipe(equipes, podio.terceiro)}</>}
-          </Eliminadas>
-        </Ala>
-      )}
+      {/*
+        Cada posição aparece assim que é decidida, e não quando o pódio inteiro
+        fica pronto: o bronze costuma sair antes da final, e segurá-lo aqui
+        esconderia uma conquista que já aconteceu.
+      */}
+      {podio !== null &&
+        (podio.campeao !== null || podio.terceiro !== null) && (
+          <Ala>
+            <TituloAla>Pódio</TituloAla>
+            <Eliminadas>
+              {podio.campeao !== null && <>🥇 {nomeDaEquipe(equipes, podio.campeao)}</>}
+              {podio.campeao !== null && podio.vice !== null && (
+                <> · 🥈 {nomeDaEquipe(equipes, podio.vice)}</>
+              )}
+              {podio.terceiro !== null && (
+                <>
+                  {podio.campeao !== null && ' · '}🥉 {nomeDaEquipe(equipes, podio.terceiro)}
+                </>
+              )}
+              {podio.campeao === null && ' — a final ainda decide ouro e prata.'}
+            </Eliminadas>
+          </Ala>
+        )}
     </Raiz>
   )
 }

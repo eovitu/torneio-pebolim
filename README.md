@@ -68,7 +68,7 @@ Resumo do que o domínio garante:
 | Semeadura da chave | 1º × último, 2º × penúltimo |
 | Disputa de 3º lugar | Entre os perdedores da semifinal, quando ela existe |
 | Grande final | Melhor de 2 jogos; 1×1 leva a um terceiro jogo |
-| Pódio | Troféu de ouro, prata e bronze no perfil de cada jogador |
+| Pódio | Ouro, prata e bronze na equipe e no perfil de cada jogador, cada posição premiada assim que é decidida |
 
 ## Documentação
 

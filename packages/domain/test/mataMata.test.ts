@@ -117,6 +117,21 @@ describe('terceiro lugar', () => {
     expect([terceiro?.equipeA, terceiro?.equipeB]).toEqual(['4º', '2º'])
   })
 
+  it('o bronze sai sem esperar a final', () => {
+    // A disputa de 3º lugar decide sozinha: segurar o bronze até o título
+    // esconderia uma conquista que já aconteceu.
+    const plano = montarMataMata(4)
+    const slots = resolver(plano, ['1º', '2º', '3º', '4º'], {
+      'R1-1': '1º',
+      'R1-2': '3º',
+      T: '2º',
+    })
+    const podio = podioDoMataMata([...slots.values()])
+    expect(podio.terceiro).toBe('2º')
+    expect(podio.campeao).toBeNull()
+    expect(podio.vice).toBeNull()
+  })
+
   it('quem perde a disputa de 3º lugar não recebe nada', () => {
     const plano = montarMataMata(4)
     const slots = resolver(plano, ['1º', '2º', '3º', '4º'], {
