@@ -73,9 +73,54 @@ describe('classificação', () => {
   })
 })
 
+describe('confronto direto — terceiro critério oficial', () => {
+  it('separa equipes iguais em pontos e saldo pelo jogo entre elas', () => {
+    // tA e tB terminam com os mesmos pontos e o mesmo saldo, mas se
+    // enfrentaram: quem venceu esse jogo fica na frente.
+    const rows = computeStandings(teams, [
+      // tA 3 × 1 tB — o confronto direto.
+      finishedMatch('m1', 'tA', 'tB', [
+        ...goals(3, 'NORMAL_GOAL', 'tA', 'F'),
+        ...goals(1, 'NORMAL_GOAL', 'tB', 'J'),
+      ]),
+      // tB 5 × 1 tC: recupera o saldo e iguala tA em pontos (3) e saldo (+2).
+      finishedMatch('m2', 'tB', 'tC', [
+        ...goals(5, 'NORMAL_GOAL', 'tB', 'J'),
+        ...goals(1, 'NORMAL_GOAL', 'tC', 'L'),
+      ]),
+    ])
+    const alfa = rows.find((r) => r.teamId === 'tA')
+    const bravo = rows.find((r) => r.teamId === 'tB')
+    expect(alfa?.pts).toBe(bravo?.pts)
+    expect(alfa?.saldo).toBe(bravo?.saldo)
+
+    expect(alfa?.position).toBe(1)
+    expect(bravo?.position).toBe(2)
+    expect(alfa?.unresolvedTie).toBe(false)
+    expect(bravo?.unresolvedTie).toBe(false)
+    expect(unresolvedTieGroups(rows)).toHaveLength(0)
+  })
+
+  it('ignora jogos contra terceiros ao calcular o confronto direto', () => {
+    // O confronto direto tA × tB acabou empatado; as goleadas de cada uma
+    // sobre tC não podem entrar nessa conta.
+    const rows = computeStandings(teams, [
+      finishedMatch('m1', 'tA', 'tB', [
+        ...goals(1, 'NORMAL_GOAL', 'tA', 'F'),
+        ...goals(1, 'NORMAL_GOAL', 'tB', 'J'),
+      ]),
+      finishedMatch('m2', 'tA', 'tC', goals(2, 'NORMAL_GOAL', 'tA', 'F')),
+      finishedMatch('m3', 'tB', 'tC', goals(2, 'NORMAL_GOAL', 'tB', 'J')),
+    ])
+    expect(rows.find((r) => r.teamId === 'tA')?.unresolvedTie).toBe(true)
+    expect(rows.find((r) => r.teamId === 'tB')?.unresolvedTie).toBe(true)
+  })
+})
+
 describe('empates que os critérios oficiais não resolvem', () => {
-  it('marca e agrupa equipes iguais em pontos e saldo', () => {
-    // tA e tB vencem tC pelo mesmo placar: mesmos pontos, mesmo saldo.
+  it('marca e agrupa equipes que nunca se enfrentaram', () => {
+    // tA e tB vencem tC pelo mesmo placar e não jogaram entre si: nem o
+    // confronto direto tem o que separar.
     const rows = computeStandings(teams, [
       finishedMatch('m1', 'tA', 'tC', goals(2, 'NORMAL_GOAL', 'tA', 'F')),
       finishedMatch('m2', 'tB', 'tC', goals(2, 'NORMAL_GOAL', 'tB', 'J')),
@@ -84,7 +129,7 @@ describe('empates que os critérios oficiais não resolvem', () => {
     const bravo = rows.find((r) => r.teamId === 'tB')
     expect(alfa?.pts).toBe(bravo?.pts)
     expect(alfa?.saldo).toBe(bravo?.saldo)
-    // Mesma posição: o sistema não inventa um terceiro critério.
+    // Mesma posição: acabaram os critérios, e o sistema não inventa um quarto.
     expect(alfa?.position).toBe(1)
     expect(bravo?.position).toBe(1)
     expect(alfa?.unresolvedTie).toBe(true)
