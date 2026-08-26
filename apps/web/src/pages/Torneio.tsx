@@ -25,6 +25,7 @@ import {
 } from '../components/Cartoes'
 import { Artilharia, Classificacao } from '../components/Tabelas'
 import { ChaveDaCopa } from '../components/ChaveDaCopa'
+import { ChaveDoMataMata } from '../components/ChaveDoMataMata'
 import { useCampeonato, useMeuJogador } from '../dados/hooks'
 import { ROTULO_STATUS_TORNEIO, descreverErro, estaAoVivo } from '../dados/campeonato'
 import { supabase } from '../lib/supabase'
@@ -176,7 +177,13 @@ export default function Torneio() {
     () => campeonato?.fases.find((f) => f.kind === 'DOUBLE_ELIMINATION'),
     [campeonato],
   )
+  /** Fase de mata-mata simples, que também é desenhada como chave. */
+  const faseDoMataMata = useMemo(
+    () => campeonato?.fases.find((f) => f.kind === 'KNOCKOUT'),
+    [campeonato],
+  )
   const temCopa = faseDaCopa !== undefined
+  const temChave = temCopa || faseDoMataMata !== undefined
 
   const executar = async (
     acao: () => PromiseLike<{ error: { message: string } | null }>,
@@ -378,7 +385,7 @@ export default function Torneio() {
         )}
 
         <BarraAbas role="tablist" aria-label="Seções do torneio">
-          {ABAS.filter((a) => a.id !== 'chave' || temCopa).map((a) => (
+          {ABAS.filter((a) => a.id !== 'chave' || temChave).map((a) => (
             <Aba
               key={a.id}
               type="button"
@@ -415,6 +422,33 @@ export default function Torneio() {
           precisa ver de onde cada equipe veio e para onde ela vai — sobretudo
           que perder uma vez não é o fim.
         */}
+        {/*
+          Mata-mata simples: quem perde está fora. A chave mostra o corte (quem
+          nem entrou), o caminho até a final e, separada, a disputa de bronze.
+        */}
+        {aba === 'chave' && faseDoMataMata !== undefined && (
+          <>
+            <Bloco>
+              <Texto $pequeno $mudo>
+                Aqui perder elimina. Entram as melhores colocadas da fase de grupos, em número
+                igual à maior potência de 2 que caiba no torneio — quem fica fora do corte não
+                joga mais. Os dois perdedores da semifinal disputam o 3º lugar, e a grande final
+                é melhor de 2 jogos: se cada equipe vencer uma, um terceiro jogo decide o título.
+              </Texto>
+            </Bloco>
+            {faseDoMataMata.chaveamento === null ? (
+              <Vazio
+                titulo="A chave ainda não foi montada"
+                descricao="Ela é gerada sozinha quando a fase de grupos é encerrada, a partir da classificação."
+              />
+            ) : (
+              <Bloco>
+                <ChaveDoMataMata fase={faseDoMataMata} partidas={partidas} equipes={equipes} />
+              </Bloco>
+            )}
+          </>
+        )}
+
         {aba === 'chave' && temCopa && faseDaCopa !== undefined && (
           <>
             <Bloco>

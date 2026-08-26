@@ -15,6 +15,7 @@ import styled from 'styled-components'
 import { UserRound } from 'lucide-react'
 import { Navegacao } from '../components/Navegacao'
 import { CartaoDePartida, GradeDeNumeros, Numero } from '../components/Cartoes'
+import { Trofeus } from '../components/Trofeus'
 import { useJogadorPublico } from '../dados/hooks'
 import { ROTULO_STATUS_TORNEIO } from '../dados/campeonato'
 import { Bloco, Cartao, Grade, Pagina, Painel, Rotulo, Texto, TituloSecao } from '../ui/Superficie'
@@ -79,8 +80,9 @@ export default function Jogador() {
     )
   }
 
-  const { jogador, estatisticas: s, times, partidas } = perfil
+  const { jogador, estatisticas: s, times, partidas, trofeus } = perfil
   const encerradas = partidas.filter((p) => p.linha.status === 'FINISHED').reverse()
+  const titulos = trofeus.filter((t) => t.posicao === 'CAMPEAO').length
 
   return (
     <>
@@ -99,6 +101,9 @@ export default function Jogador() {
                 <Badge $tom="claro">{s.j === 1 ? '1 partida' : `${s.j} partidas`}</Badge>
                 {s.artilhariaLiquida > 0 && (
                   <Badge $tom="ouro">{s.artilhariaLiquida} de artilharia</Badge>
+                )}
+                {titulos > 0 && (
+                  <Badge $tom="ouro">{titulos === 1 ? '1 título' : `${titulos} títulos`}</Badge>
                 )}
               </div>
             </div>
@@ -125,6 +130,19 @@ export default function Jogador() {
             oficial do jogador.
           </Texto>
         </Bloco>
+
+        {/*
+          A estante vem antes dos times: é o que a pessoa abre o próprio perfil
+          para ver, e o que ela manda o link para alguém ver.
+        */}
+        {trofeus.length > 0 && (
+          <Bloco>
+            <TituloSecao>
+              <h2>Troféus</h2>
+            </TituloSecao>
+            <Trofeus trofeus={trofeus} />
+          </Bloco>
+        )}
 
         <Bloco>
           <TituloSecao>

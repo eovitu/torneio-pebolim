@@ -11,7 +11,7 @@
  */
 
 /** Versão vigente das regras. Gravada em `accepted_rules_version` no aceite. */
-export const RULES_VERSION = '1.0.0'
+export const RULES_VERSION = '1.1.0'
 
 export interface RuleSection {
   id: string
@@ -26,8 +26,9 @@ export const RULES: readonly RuleSection[] = [
     items: [
       'A partida dura 3 minutos (180 segundos).',
       'A partida termina quando o cronômetro chega a 00:00.',
-      'Não existe limite máximo nem mínimo de gols: o tempo é o único limite.',
       'A partida pode ser pausada pelo juiz. Ao retomar, o cronômetro continua do ponto em que parou.',
+      'O organizador pode, antes da partida começar, trocar o tempo por uma meta de gols: aí a partida acaba assim que uma equipe atinge a meta, sem esperar o cronômetro.',
+      'A meta conta o valor do placar, e o gol de goleiro vale 2 — ele pode encerrar a partida passando da meta.',
     ],
   },
   {
@@ -84,7 +85,8 @@ export const RULES: readonly RuleSection[] = [
     items: [
       'O primeiro critério é o número de pontos.',
       'O segundo critério é o saldo de gols, calculado sobre o valor do placar.',
-      'Equipes que permanecem empatadas nos dois critérios são exibidas na mesma posição.',
+      'O terceiro critério é o confronto direto: entre as equipes empatadas nos dois primeiros critérios, valem apenas os jogos delas entre si — primeiro pontos, depois saldo.',
+      'Equipes que permanecem empatadas nos três critérios são exibidas na mesma posição.',
     ],
   },
   {
@@ -95,6 +97,37 @@ export const RULES: readonly RuleSection[] = [
       'Se o tempo regulamentar terminar empatado, a partida entra em gol de ouro.',
       'No gol de ouro o cronômetro passa a contar progressivamente a partir de 00:00, sem limite de tempo.',
       'O próximo gol válido — normal, de goleiro ou contra — encerra a partida e define o vencedor.',
+    ],
+  },
+  {
+    id: 'chaveamento',
+    title: 'Chaveamento do mata-mata',
+    items: [
+      'Encerrada a fase de grupos, a chave do mata-mata é gerada automaticamente pela classificação.',
+      'Entram as melhores colocadas, em número igual à maior potência de 2 que caiba no torneio: 2, 4, 8, 16 ou 32.',
+      'Quem fica fora desse corte está eliminado — sem chave e sem jogo de consolação.',
+      'O emparelhamento é por semeadura: o melhor colocado enfrenta o pior, o segundo enfrenta o penúltimo, e assim por diante.',
+      'Havendo semifinal, os dois perdedores dela disputam o 3º lugar. Numa chave de 2 equipes essa disputa não existe.',
+    ],
+  },
+  {
+    id: 'final',
+    title: 'A grande final',
+    items: [
+      'A grande final é disputada em melhor de 2 jogos, e os dois são sempre jogados.',
+      'Campeã é a equipe que vencer os dois jogos.',
+      'Se cada equipe vencer um jogo, uma terceira partida decide o título.',
+      'Nenhum desses jogos pode terminar empatado: vale o gol de ouro como em todo mata-mata.',
+    ],
+  },
+  {
+    id: 'podio',
+    title: 'Pódio e troféus',
+    items: [
+      'A equipe campeã recebe o troféu de ouro; a vice-campeã, o de prata.',
+      'A vencedora da disputa de 3º lugar recebe o troféu de bronze.',
+      'Da 4ª colocação em diante não há premiação — inclusive para quem perde a disputa de 3º lugar.',
+      'O troféu aparece no perfil de cada jogador da equipe, com o nome do torneio.',
     ],
   },
   {

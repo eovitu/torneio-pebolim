@@ -56,13 +56,18 @@ Resumo do que o domínio garante:
 
 | Regra | Valor |
 | --- | --- |
-| Duração da partida | 180 segundos |
+| Duração da partida | 180 segundos — ou uma meta de gols, se o organizador escolher |
 | Gol normal | 1 |
 | Gol de goleiro | 2 |
 | Gol contra | 1 (credita o adversário; nunca vale 2) |
 | Vitória / empate / derrota | 3 / 1 / 0 pontos |
 | Empate no mata-mata | Gol de ouro, cronômetro progressivo, sem limite |
-| Desempate na tabela | Pontos, depois saldo de gols |
+| Desempate na tabela | Pontos, saldo de gols, confronto direto |
+| Corte para o mata-mata | As N melhores, N = maior potência de 2 ≤ número de equipes |
+| Semeadura da chave | 1º × último, 2º × penúltimo |
+| Disputa de 3º lugar | Entre os perdedores da semifinal, quando ela existe |
+| Grande final | Melhor de 2 jogos; 1×1 leva a um terceiro jogo |
+| Pódio | Troféu de ouro, prata e bronze no perfil de cada jogador |
 
 ## Documentação
 
