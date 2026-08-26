@@ -175,8 +175,10 @@ export type Database = {
           accumulated_paused_ms: number
           agendada_para: string | null
           arbitro_user_id: string | null
+          condicao_termino: Database['public']['Enums']['condicao_de_termino'] | null
           created_at: string
           finished_at: string | null
+          gols_para_vencer: number | null
           id: string
           iniciada_por: string | null
           label: string
@@ -198,8 +200,10 @@ export type Database = {
           accumulated_paused_ms?: number
           agendada_para?: string | null
           arbitro_user_id?: string | null
+          condicao_termino?: Database['public']['Enums']['condicao_de_termino'] | null
           created_at?: string
           finished_at?: string | null
+          gols_para_vencer?: number | null
           id?: string
           iniciada_por?: string | null
           label: string
@@ -221,8 +225,10 @@ export type Database = {
           accumulated_paused_ms?: number
           agendada_para?: string | null
           arbitro_user_id?: string | null
+          condicao_termino?: Database['public']['Enums']['condicao_de_termino'] | null
           created_at?: string
           finished_at?: string | null
+          gols_para_vencer?: number | null
           id?: string
           iniciada_por?: string | null
           label?: string
@@ -573,8 +579,10 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          condicao_termino: Database['public']['Enums']['condicao_de_termino']
           created_at: string
           criado_por: string
+          gols_para_vencer: number | null
           id: string
           jogadores_por_equipe: number
           max_equipes: number
@@ -583,11 +591,14 @@ export type Database = {
           rules_version: string
           slug: string
           status: Database['public']['Enums']['tournament_status']
+          trofeu_skin: string
           updated_at: string
         }
         Insert: {
+          condicao_termino?: Database['public']['Enums']['condicao_de_termino']
           created_at?: string
           criado_por: string
+          gols_para_vencer?: number | null
           id?: string
           jogadores_por_equipe?: number
           max_equipes?: number
@@ -596,11 +607,14 @@ export type Database = {
           rules_version: string
           slug: string
           status?: Database['public']['Enums']['tournament_status']
+          trofeu_skin?: string
           updated_at?: string
         }
         Update: {
+          condicao_termino?: Database['public']['Enums']['condicao_de_termino']
           created_at?: string
           criado_por?: string
+          gols_para_vencer?: number | null
           id?: string
           jogadores_por_equipe?: number
           max_equipes?: number
@@ -609,7 +623,35 @@ export type Database = {
           rules_version?: string
           slug?: string
           status?: Database['public']['Enums']['tournament_status']
+          trofeu_skin?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      trofeus: {
+        Row: {
+          conquistado_em: string
+          id: string
+          player_id: string
+          posicao: Database['public']['Enums']['trofeu_posicao']
+          team_id: string
+          tournament_id: string
+        }
+        Insert: {
+          conquistado_em?: string
+          id?: string
+          player_id: string
+          posicao: Database['public']['Enums']['trofeu_posicao']
+          team_id: string
+          tournament_id: string
+        }
+        Update: {
+          conquistado_em?: string
+          id?: string
+          player_id?: string
+          posicao?: Database['public']['Enums']['trofeu_posicao']
+          team_id?: string
+          tournament_id?: string
         }
         Relationships: []
       }
@@ -657,6 +699,47 @@ export type Database = {
         Returns: Database['public']['Tables']['phases']['Row']
       }
       gerar_partidas_grupo: { Args: { p_phase_id: string }; Returns: number }
+      avancar_mata_mata: { Args: { p_phase_id: string }; Returns: number }
+      classificacao_da_fase: {
+        Args: { p_phase_id: string }
+        Returns: { pos: number; pts: number; saldo: number; team_id: string }[]
+      }
+      conceder_trofeus: { Args: { p_phase_id: string }; Returns: number }
+      configurar_partida: {
+        Args: {
+          p_match_id: string
+          p_condicao?: Database['public']['Enums']['condicao_de_termino'] | null
+          p_gols?: number | null
+        }
+        Returns: Database['public']['Tables']['matches']['Row']
+      }
+      configurar_termino_do_torneio: {
+        Args: {
+          p_tournament_id: string
+          p_condicao: Database['public']['Enums']['condicao_de_termino']
+          p_gols?: number | null
+        }
+        Returns: Database['public']['Tables']['tournaments']['Row']
+      }
+      excluir_partida: { Args: { p_match_id: string }; Returns: undefined }
+      gerar_mata_mata: {
+        Args: { p_phase_id: string; p_team_ids?: string[] }
+        Returns: number
+      }
+      podio_do_mata_mata: {
+        Args: { p_phase_id: string }
+        Returns: {
+          posicao: Database['public']['Enums']['trofeu_posicao']
+          team_id: string
+        }[]
+      }
+      regra_de_termino: {
+        Args: { p_match_id: string }
+        Returns: {
+          condicao: Database['public']['Enums']['condicao_de_termino']
+          gols_para_vencer: number | null
+        }[]
+      }
       gerar_eliminacao_dupla: {
         Args: { p_phase_id: string; p_team_ids?: string[] | null }
         Returns: number
@@ -791,6 +874,7 @@ export type Database = {
     }
     Enums: {
       app_role: 'PLAYER' | 'ADMIN' | 'FACTORY_ADMIN'
+      condicao_de_termino: 'TEMPO' | 'GOLS'
       match_event_type:
         | 'NORMAL_GOAL'
         | 'KEEPER_GOAL'
@@ -804,6 +888,7 @@ export type Database = {
       match_status: 'SCHEDULED' | 'LIVE' | 'PAUSED' | 'GOLDEN_GOAL' | 'FINISHED'
       phase_kind: 'GROUP' | 'KNOCKOUT' | 'DOUBLE_ELIMINATION'
       tournament_status: 'CONFIGURACAO' | 'AGUARDANDO_INICIO' | 'EM_ANDAMENTO' | 'ENCERRADO'
+      trofeu_posicao: 'CAMPEAO' | 'VICE' | 'TERCEIRO'
     }
     CompositeTypes: {
       [_ in never]: never

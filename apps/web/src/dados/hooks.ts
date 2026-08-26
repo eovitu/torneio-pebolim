@@ -18,6 +18,8 @@ import { emptyPlayerStats } from '@pebolim/domain'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 import { useAuth } from '../auth/useAuth'
+import { paraSkin } from './trofeus'
+import type { TrofeuExibido } from './trofeus'
 import { buscarCru, derivar, descreverErro, estaAoVivo, paraDominio } from './campeonato'
 import type {
   Campeonato,
@@ -603,6 +605,7 @@ export interface PerfilDeJogador {
   estatisticas: PlayerStats
   times: { equipe: LinhaEquipe; torneio: LinhaTorneio }[]
   partidas: PartidaDoPainel[]
+  trofeus: TrofeuExibido[]
 }
 
 /**
@@ -643,6 +646,7 @@ export function useJogadorPublico(playerId: string | null) {
         estatisticas: emptyPlayerStats(jogador.id),
         times: [],
         partidas: [],
+        trofeus: [],
       })
       setErro(null)
       setCarregando(false)
@@ -681,7 +685,30 @@ export function useJogadorPublico(playerId: string | null) {
         nomeTorneio: torneio.nome,
       }))
 
-    setPerfil({ jogador, estatisticas, times, partidas })
+    // O pódio já vem materializado em `trofeus`: o perfil cruza vários
+    // torneios, e recalcular a chave de cada um a cada abertura seria varrer o
+    // campeonato inteiro para responder "quantas medalhas você tem".
+    const { data: medalhas } = await supabase
+      .from('trofeus')
+      .select('id, posicao, tournament_id, team_id')
+      .eq('player_id', jogador.id)
+
+    const trofeus: TrofeuExibido[] = (medalhas ?? []).flatMap((m) => {
+      const torneio = torneioPorId.get(m.tournament_id)
+      const equipe = equipePorId.get(m.team_id)
+      if (torneio === undefined || equipe === undefined) return []
+      return [
+        {
+          id: m.id,
+          posicao: m.posicao,
+          skin: paraSkin(torneio.trofeu_skin),
+          nomeDoTorneio: torneio.nome,
+          nomeDaEquipe: equipe.nome,
+        },
+      ]
+    })
+
+    setPerfil({ jogador, estatisticas, times, partidas, trofeus })
     setErro(null)
     setCarregando(false)
   }, [playerId])
