@@ -81,9 +81,14 @@ export function melhorTrofeu(lista: readonly TrofeuExibido[]): PosicaoDeTrofeu {
 /**
  * Troféus conquistados por uma equipe.
  *
- * Uma equipe existe dentro de um torneio só, então isto devolve no máximo um
- * troféu — mas a forma é lista para casar com o componente que desenha, e para
- * não precisar mudar caso um dia uma equipe atravesse torneios.
+ * A tabela guarda UMA LINHA POR JOGADOR — é assim que o mesmo troféu chega ao
+ * perfil de cada um deles. Uma equipe de dois jogadores tem, portanto, duas
+ * linhas do mesmo bronze.
+ *
+ * Mas a equipe ganhou UM bronze, não dois: a conquista é dela, e as linhas por
+ * jogador são a forma de distribuí-la. Por isso as linhas são agrupadas por
+ * torneio e posição antes de virarem cartões. Sem isso a página mostra o mesmo
+ * troféu repetido, uma vez por integrante do elenco.
  */
 export async function buscarTrofeusDaEquipe(
   teamId: string,
@@ -94,20 +99,27 @@ export async function buscarTrofeusDaEquipe(
     .eq('team_id', teamId)
 
   const linhas = data ?? []
-  // Uma linha só é útil quando o torneio e a equipe vieram junto: sem o nome do
-  // torneio o troféu não diz de onde veio, que é metade do que ele comunica.
-  return linhas.flatMap((l) => {
+
+  // Uma conquista por torneio e posição. A chave não inclui o jogador
+  // justamente porque é ele que se repete.
+  const porConquista = new Map<string, TrofeuExibido>()
+  for (const l of linhas) {
     const torneio = l.tournaments
     const equipe = l.teams
-    if (torneio === null || equipe === null) return []
-    return [
-      {
-        id: l.id,
-        posicao: l.posicao,
-        skin: paraSkin(torneio.trofeu_skin),
-        nomeDoTorneio: torneio.nome,
-        nomeDaEquipe: equipe.nome,
-      },
-    ]
-  })
+    // Sem o nome do torneio o troféu não diz de onde veio, que é metade do que
+    // ele comunica.
+    if (torneio === null || equipe === null) continue
+
+    const chave = `${l.tournament_id}:${l.posicao}`
+    if (porConquista.has(chave)) continue
+    porConquista.set(chave, {
+      id: chave,
+      posicao: l.posicao,
+      skin: paraSkin(torneio.trofeu_skin),
+      nomeDoTorneio: torneio.nome,
+      nomeDaEquipe: equipe.nome,
+    })
+  }
+
+  return [...porConquista.values()]
 }
