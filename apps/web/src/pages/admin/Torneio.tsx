@@ -38,12 +38,18 @@ import {
   MAX_JOGADORES_POR_EQUIPE,
   MIN_PARTICIPANTES,
   comporEquipes,
+  corteDeMataMata,
+  descreverTermino,
+  metaValida,
   descreverComposicao,
   temEquipeSozinha,
 } from '@pebolim/domain'
 import { ROTULO_STATUS_TORNEIO, descreverErro } from '../../dados/campeonato'
 import { Navegacao } from '../../components/Navegacao'
 import { CartaoDePartida } from '../../components/Cartoes'
+import { PartidaAdmin } from '../../components/PartidaAdmin'
+import { Trofeus } from '../../components/Trofeus'
+import { ROTULO_SKIN, SKINS, paraSkin } from '../../dados/trofeus'
 import {
   Bloco,
   Cartao,
@@ -195,7 +201,6 @@ export default function TorneioAdmin() {
   const [nomesEquipes, setNomesEquipes] = useState('')
   const [nomeFase, setNomeFase] = useState('')
   const [tipoFase, setTipoFase] = useState<Enums<'phase_kind'>>('GROUP')
-  const [confronto, setConfronto] = useState<Record<string, { a: string; b: string }>>({})
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
   const [modoFormacao, setModoFormacao] = useState<'sorteio' | 'manual'>('sorteio')
   /** Ordem das equipes no chaveamento da Copa: a posição na lista é a posição na chave. */
@@ -530,6 +535,121 @@ export default function TorneioAdmin() {
                 Uma pessoa vai enfrentar duplas sozinha — situação prevista pelas regras.
               </Texto>
             )}
+          </Cartao>
+
+          {/*
+            Como a partida acaba. Este é o PADRÃO do campeonato: cada partida
+            ainda pode ter a sua, e por isso mudar aqui não mexe em quem já
+            escolheu diferente.
+          */}
+          <Cartao>
+            <Rotulo>Como a partida acaba</Rotulo>
+            <Texto $pequeno $mudo style={{ marginTop: 6 }}>
+              Vale para toda partida que não tiver escolhido a regra dela. Terminar por gols
+              encerra a partida no instante em que alguém bate a meta, sem esperar o cronômetro.
+            </Texto>
+            <Grade2 style={{ marginTop: 12 }}>
+              <Selecao
+                aria-label="Condição de término padrão"
+                value={torneio.condicao_termino}
+                disabled={ocupado}
+                onChange={(e) => {
+                  const condicao = e.target.value as Enums<'condicao_de_termino'>
+                  void executar(
+                    () =>
+                      supabase.rpc('configurar_termino_do_torneio', {
+                        p_tournament_id: torneio.id,
+                        p_condicao: condicao,
+                        p_gols: condicao === 'GOLS' ? (torneio.gols_para_vencer ?? 3) : null,
+                      }),
+                    'Regra de término do torneio salva.',
+                  )
+                }}
+              >
+                <option value="TEMPO">Por tempo — 3 minutos</option>
+                <option value="GOLS">Por gols — acaba ao bater a meta</option>
+              </Selecao>
+
+              {torneio.condicao_termino === 'GOLS' && (
+                <Entrada
+                  type="number"
+                  min={1}
+                  max={20}
+                  step={1}
+                  aria-label="Gols para vencer"
+                  defaultValue={torneio.gols_para_vencer ?? 3}
+                  disabled={ocupado}
+                  onBlur={(e) => {
+                    const meta = Number(e.target.value)
+                    if (!metaValida(meta) || meta === torneio.gols_para_vencer) return
+                    void executar(
+                      () =>
+                        supabase.rpc('configurar_termino_do_torneio', {
+                          p_tournament_id: torneio.id,
+                          p_condicao: 'GOLS',
+                          p_gols: meta,
+                        }),
+                      `Partidas passam a terminar com ${meta} gols.`,
+                    )
+                  }}
+                />
+              )}
+            </Grade2>
+            <Texto $pequeno $mudo style={{ marginTop: 10 }}>
+              {descreverTermino({
+                condicao: torneio.condicao_termino,
+                golsParaVencer: torneio.gols_para_vencer,
+              })}
+              {torneio.condicao_termino === 'GOLS' &&
+                ' — o placar conta o valor dos gols, e o de goleiro vale 2.'}
+            </Texto>
+          </Cartao>
+
+          {/*
+            A cara do troféu deste campeonato. Só o NOME da skin vai para o
+            banco: o desenho vive na interface, então trocar a aparência de um
+            troféu nunca é migração de dados.
+          */}
+          <Cartao>
+            <Rotulo>Troféu do campeonato</Rotulo>
+            <Texto $pequeno $mudo style={{ marginTop: 6 }}>
+              Vale para o pódio deste torneio. O nome do campeonato já entra sozinho no troféu; a
+              hierarquia ouro / prata / bronze é a mesma em qualquer skin.
+            </Texto>
+            <Grade2 style={{ marginTop: 12 }}>
+              <Selecao
+                aria-label="Skin do troféu"
+                value={paraSkin(torneio.trofeu_skin)}
+                disabled={ocupado}
+                onChange={(e) =>
+                  void executar(
+                    () =>
+                      supabase
+                        .from('tournaments')
+                        .update({ trofeu_skin: e.target.value })
+                        .eq('id', torneio.id),
+                    'Skin do troféu salva.',
+                  )
+                }
+              >
+                {SKINS.map((skin) => (
+                  <option key={skin} value={skin}>
+                    {ROTULO_SKIN[skin]}
+                  </option>
+                ))}
+              </Selecao>
+            </Grade2>
+            <div style={{ marginTop: 14 }}>
+              <Trofeus
+                trofeus={(['CAMPEAO', 'VICE', 'TERCEIRO'] as const).map((posicao) => ({
+                  id: `previa-${posicao}`,
+                  posicao,
+                  skin: paraSkin(torneio.trofeu_skin),
+                  nomeDoTorneio: torneio.nome,
+                  nomeDaEquipe: 'prévia — nome da equipe',
+                }))}
+              />
+            </div>
           </Cartao>
         </Bloco>
 
@@ -1079,7 +1199,6 @@ export default function TorneioAdmin() {
             fases.map((f) => {
               const daFase = partidas.filter((p) => p.phase_id === f.id)
               const encerrada = f.encerrada_em !== null
-              const escolha = confronto[f.id] ?? { a: '', b: '' }
               return (
                 <CartaoFase key={f.id}>
                   <TituloSecao>
@@ -1175,80 +1294,115 @@ export default function TorneioAdmin() {
                     </Formulario>
                   )}
 
-                  {f.kind === 'KNOCKOUT' && !encerrada && (
+                  {/*
+                    Mata-mata simples: a chave inteira sai da classificação, de
+                    uma vez. Entram as N melhores, com N sendo a maior potência
+                    de 2 que caiba no torneio — quem fica fora do corte não joga
+                    mais. Depois disso ela anda sozinha: cada partida encerrada
+                    cria a seguinte.
+                  */}
+                  {f.kind === 'KNOCKOUT' && !encerrada && daFase.length === 0 && (
                     <Formulario
                       onSubmit={(ev) => {
                         ev.preventDefault()
-                        if (escolha.a === '' || escolha.b === '') return
                         void executar(
                           () =>
-                            supabase.rpc('criar_partida_mata_mata', {
+                            supabase.rpc('gerar_mata_mata', {
                               p_phase_id: f.id,
-                              p_team_a_id: escolha.a,
-                              p_team_b_id: escolha.b,
-                              p_agendada_para: null,
+                              p_team_ids: ordemDaChave.length > 0 ? ordemDaChave : null,
                             }),
-                          'Confronto criado.',
+                          'Chave gerada. Os confrontos seguintes aparecem sozinhos conforme as partidas terminam.',
                         )
                       }}
                     >
                       <Texto $pequeno $mudo>
-                        Chaveamento livre: crie a próxima partida quando quiser, escolhendo
-                        qualquer confronto — inclusive repetindo uma equipe que já jogou. O sistema
-                        não monta calendário nem elimina ninguém automaticamente: quem avança, e
-                        quantas vezes cada equipe joga, é decisão sua.
+                        Aqui perder elimina. Os dois perdedores da semifinal disputam o 3º lugar, e
+                        a grande final é melhor de 2 jogos — se cada equipe vencer uma, um terceiro
+                        jogo decide o título.
                       </Texto>
-                      <Grade2>
-                        <Selecao
-                          value={escolha.a}
-                          onChange={(e) =>
-                            setConfronto((c) => ({
-                              ...c,
-                              [f.id]: { ...escolha, a: e.target.value },
-                            }))
-                          }
-                        >
-                          <option value="">Equipe A…</option>
-                          {equipes.map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.nome}
-                            </option>
-                          ))}
-                        </Selecao>
-                        <Selecao
-                          value={escolha.b}
-                          onChange={(e) =>
-                            setConfronto((c) => ({
-                              ...c,
-                              [f.id]: { ...escolha, b: e.target.value },
-                            }))
-                          }
-                        >
-                          <option value="">Equipe B…</option>
-                          {equipes.map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.nome}
-                            </option>
-                          ))}
-                        </Selecao>
-                      </Grade2>
-                      <Botao type="submit" $variante="contorno" disabled={ocupado}>
-                        Criar próxima partida
+                      <Aviso>
+                        {equipes.length < 2
+                          ? 'São necessárias ao menos 2 equipes para montar uma chave.'
+                          : `${equipes.length} equipes no torneio: a chave é de ${corteDeMataMata(equipes.length)}. ` +
+                            (equipes.length === corteDeMataMata(equipes.length)
+                              ? 'Todas entram.'
+                              : `As ${equipes.length - corteDeMataMata(equipes.length)} últimas da ordem abaixo ficam de fora.`)}
+                      </Aviso>
+                      <Texto $pequeno $mudo>
+                        A ordem abaixo é a classificação: o 1º enfrenta o último que entrou na
+                        chave, o 2º enfrenta o penúltimo. Normalmente ela já vem pronta ao encerrar
+                        a fase de grupos — ajuste só se precisar.
+                      </Texto>
+                      <ListaSelecao>
+                        {ordemDaChave.map((teamId, indice) => {
+                          const dentro = indice < corteDeMataMata(Math.max(equipes.length, 2))
+                          return (
+                            <LinhaLista key={teamId}>
+                              <Badge $tom={dentro ? 'neutro' : 'perigo'}>{indice + 1}º</Badge>
+                              <span>
+                                {nomeDe(teamId)}
+                                {!dentro && ' — fora do corte'}
+                              </span>
+                              <Botao
+                                type="button"
+                                $variante="fantasma"
+                                $tamanho="sm"
+                                disabled={ocupado || indice === 0}
+                                aria-label={`Subir ${nomeDe(teamId)}`}
+                                onClick={() =>
+                                  setOrdemDaChave((atual) => {
+                                    const proxima = [...atual]
+                                    const anterior = proxima[indice - 1]
+                                    const este = proxima[indice]
+                                    if (anterior === undefined || este === undefined) return atual
+                                    proxima[indice - 1] = este
+                                    proxima[indice] = anterior
+                                    return proxima
+                                  })
+                                }
+                              >
+                                ↑
+                              </Botao>
+                            </LinhaLista>
+                          )
+                        })}
+                      </ListaSelecao>
+                      <Botao type="submit" disabled={ocupado || equipes.length < 2}>
+                        <Trophy size={16} aria-hidden="true" />
+                        Gerar a chave
                       </Botao>
                     </Formulario>
+                  )}
+
+                  {f.kind === 'KNOCKOUT' && !encerrada && daFase.length > 0 && (
+                    <Texto $pequeno $mudo>
+                      A chave já está montada e anda sozinha: encerrar uma partida cria a seguinte.
+                      A final só nasce quando as duas semifinais terminam, e o jogo de desempate só
+                      nasce se a série empatar em 1 a 1.
+                    </Texto>
                   )}
 
                   {daFase.length > 0 && (
                     <div style={{ display: 'grid', gap: 12 }}>
                       {daFase.map((p) => (
-                        <CartaoDePartida
-                          key={p.id}
-                          partida={p}
-                          nomeA={nomeDe(p.team_a_id)}
-                          nomeB={nomeDe(p.team_b_id)}
-                          placarA={0}
-                          placarB={0}
-                        />
+                        <div key={p.id} style={{ display: 'grid', gap: 8 }}>
+                          <CartaoDePartida
+                            partida={p}
+                            nomeA={nomeDe(p.team_a_id)}
+                            nomeB={nomeDe(p.team_b_id)}
+                            placarA={0}
+                            placarB={0}
+                          />
+                          <PartidaAdmin
+                            partida={p}
+                            padraoDoTorneio={{
+                              condicao: torneio.condicao_termino,
+                              golsParaVencer: torneio.gols_para_vencer,
+                            }}
+                            ocupado={ocupado}
+                            executar={executar}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}

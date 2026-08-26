@@ -41,3 +41,11 @@ export const METAL_TROFEU: Record<PosicaoDeTrofeu, string> = {
   VICE: 'Prata',
   TERCEIRO: 'Bronze',
 }
+
+/** Nome de cada skin como o administrador a vê ao escolher. */
+export const ROTULO_SKIN: Record<SkinDeTrofeu, string> = {
+  CLASSICO: 'Clássico — metais tradicionais',
+  NEON: 'Neon — saturado e brilhante',
+  RETRO: 'Retrô — metais foscos',
+  BOTECO: 'Boteco — quente e cru',
+}

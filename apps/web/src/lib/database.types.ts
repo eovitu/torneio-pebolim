@@ -723,7 +723,7 @@ export type Database = {
       }
       excluir_partida: { Args: { p_match_id: string }; Returns: undefined }
       gerar_mata_mata: {
-        Args: { p_phase_id: string; p_team_ids?: string[] }
+        Args: { p_phase_id: string; p_team_ids?: string[] | null }
         Returns: number
       }
       podio_do_mata_mata: {
