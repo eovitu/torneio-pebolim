@@ -18,7 +18,7 @@ import { Trofeus } from '../components/Trofeus'
 import { useCampeonato, useMeuJogador } from '../dados/hooks'
 import { ROTULO_STATUS_TORNEIO, descreverErro } from '../dados/campeonato'
 import type { LinhaEquipe } from '../dados/campeonato'
-import { ROTULO_TROFEU, buscarTrofeusDaEquipe } from '../dados/trofeus'
+import { ROTULO_TROFEU, buscarTrofeusDaEquipe, melhorTrofeu } from '../dados/trofeus'
 import type { TrofeuExibido } from '../dados/trofeus'
 import { supabase } from '../lib/supabase'
 import { usePapeis } from '../auth/usePapeis'
@@ -356,7 +356,7 @@ export default function Time() {
           <Bloco>
             <TituloSecao>
               <h2>{trofeus.length === 1 ? 'Conquista' : 'Conquistas'}</h2>
-              <Badge $tom="ouro">{ROTULO_TROFEU[trofeus[0]!.posicao]}</Badge>
+              <Badge $tom="ouro">{ROTULO_TROFEU[melhorTrofeu(trofeus)]}</Badge>
             </TituloSecao>
             <Trofeus trofeus={trofeus} />
           </Bloco>

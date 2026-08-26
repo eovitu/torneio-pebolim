@@ -83,6 +83,7 @@ export default function Jogador() {
   const { jogador, estatisticas: s, times, partidas, trofeus } = perfil
   const encerradas = partidas.filter((p) => p.linha.status === 'FINISHED').reverse()
   const titulos = trofeus.filter((t) => t.posicao === 'CAMPEAO').length
+  const artilharias = trofeus.filter((t) => t.posicao === 'ARTILHEIRO').length
 
   return (
     <>
@@ -104,6 +105,11 @@ export default function Jogador() {
                 )}
                 {titulos > 0 && (
                   <Badge $tom="ouro">{titulos === 1 ? '1 título' : `${titulos} títulos`}</Badge>
+                )}
+                {artilharias > 0 && (
+                  <Badge $tom="acento">
+                    {artilharias === 1 ? 'Artilheiro' : `${artilharias}× artilheiro`}
+                  </Badge>
                 )}
               </div>
             </div>

@@ -69,6 +69,7 @@ Resumo do que o domínio garante:
 | Disputa de 3º lugar | Entre os perdedores da semifinal, quando ela existe |
 | Grande final | Melhor de 2 jogos; 1×1 leva a um terceiro jogo |
 | Pódio | Ouro, prata e bronze na equipe e no perfil de cada jogador, cada posição premiada assim que é decidida |
+| Artilheiro | Troféu próprio, concedido só no encerramento do torneio; empate premia todos |
 
 ## Documentação
 

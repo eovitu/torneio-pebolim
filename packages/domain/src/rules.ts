@@ -128,6 +128,9 @@ export const RULES: readonly RuleSection[] = [
       'A vencedora da disputa de 3º lugar recebe o troféu de bronze na hora, sem esperar a final.',
       'Da 4ª colocação em diante não há premiação — inclusive para quem perde a disputa de 3º lugar.',
       'O troféu aparece na página da equipe e no perfil de cada jogador dela, com o nome do torneio.',
+      'O artilheiro do torneio recebe um troféu próprio, concedido apenas quando o torneio é encerrado — antes disso a artilharia ainda pode mudar.',
+      'A artilharia que decide é a líquida: o valor dos gols marcados, com o de goleiro valendo 2, menos um por cada gol contra.',
+      'Empate na artilharia premia todos os empatados: não há critério de desempate definido para ela.',
     ],
   },
   {
