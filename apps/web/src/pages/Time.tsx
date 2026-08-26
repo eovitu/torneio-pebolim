@@ -14,9 +14,12 @@ import { Camera, Palette, Shield, Users } from 'lucide-react'
 import { Navegacao } from '../components/Navegacao'
 import { CartaoDePartida, GradeDeNumeros, LinhaDeJogador, Numero } from '../components/Cartoes'
 import { Artilharia } from '../components/Tabelas'
+import { Trofeus } from '../components/Trofeus'
 import { useCampeonato, useMeuJogador } from '../dados/hooks'
 import { ROTULO_STATUS_TORNEIO, descreverErro } from '../dados/campeonato'
 import type { LinhaEquipe } from '../dados/campeonato'
+import { ROTULO_TROFEU, buscarTrofeusDaEquipe } from '../dados/trofeus'
+import type { TrofeuExibido } from '../dados/trofeus'
 import { supabase } from '../lib/supabase'
 import { usePapeis } from '../auth/usePapeis'
 import { useAuth } from '../auth/useAuth'
@@ -126,6 +129,21 @@ export default function Time() {
   }, [id])
 
   const { campeonato, carregando, recarregar } = useCampeonato(equipe?.tournament_id ?? null)
+
+  // O pódio é materializado em `trofeus` pelo servidor assim que cada posição é
+  // decidida — a tela só lê. Recarrega junto do campeonato porque ganhar a
+  // disputa de 3º lugar concede o bronze na mesma hora.
+  const [trofeus, setTrofeus] = useState<TrofeuExibido[]>([])
+  useEffect(() => {
+    let ativo = true
+    if (id === '') return
+    void buscarTrofeusDaEquipe(id).then((lista) => {
+      if (ativo) setTrofeus(lista)
+    })
+    return () => {
+      ativo = false
+    }
+  }, [id, campeonato])
 
   const [editando, setEditando] = useState(false)
   const [nome, setNome] = useState('')
@@ -329,6 +347,20 @@ export default function Time() {
 
         {erroAcao !== null && <Erro>{erroAcao}</Erro>}
         {aviso !== null && <Sucesso>{aviso}</Sucesso>}
+
+        {/*
+          A conquista vem antes da campanha: é o que a equipe quer mostrar, e o
+          que alguém abrindo esta página de fora quer ver primeiro.
+        */}
+        {trofeus.length > 0 && (
+          <Bloco>
+            <TituloSecao>
+              <h2>{trofeus.length === 1 ? 'Conquista' : 'Conquistas'}</h2>
+              <Badge $tom="ouro">{ROTULO_TROFEU[trofeus[0]!.posicao]}</Badge>
+            </TituloSecao>
+            <Trofeus trofeus={trofeus} />
+          </Bloco>
+        )}
 
         {stats !== undefined && (
           <Bloco>

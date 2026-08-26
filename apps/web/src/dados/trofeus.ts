@@ -6,6 +6,8 @@
  * refresh do Vite.
  */
 
+import { supabase } from '../lib/supabase'
+
 export type PosicaoDeTrofeu = 'CAMPEAO' | 'VICE' | 'TERCEIRO'
 
 /** As skins que o administrador pode escolher por torneio. */
@@ -48,4 +50,38 @@ export const ROTULO_SKIN: Record<SkinDeTrofeu, string> = {
   NEON: 'Neon — saturado e brilhante',
   RETRO: 'Retrô — metais foscos',
   BOTECO: 'Boteco — quente e cru',
+}
+
+/**
+ * Troféus conquistados por uma equipe.
+ *
+ * Uma equipe existe dentro de um torneio só, então isto devolve no máximo um
+ * troféu — mas a forma é lista para casar com o componente que desenha, e para
+ * não precisar mudar caso um dia uma equipe atravesse torneios.
+ */
+export async function buscarTrofeusDaEquipe(
+  teamId: string,
+): Promise<TrofeuExibido[]> {
+  const { data } = await supabase
+    .from('trofeus')
+    .select('id, posicao, tournament_id, team_id, tournaments(nome, trofeu_skin), teams(nome)')
+    .eq('team_id', teamId)
+
+  const linhas = data ?? []
+  // Uma linha só é útil quando o torneio e a equipe vieram junto: sem o nome do
+  // torneio o troféu não diz de onde veio, que é metade do que ele comunica.
+  return linhas.flatMap((l) => {
+    const torneio = l.tournaments
+    const equipe = l.teams
+    if (torneio === null || equipe === null) return []
+    return [
+      {
+        id: l.id,
+        posicao: l.posicao,
+        skin: paraSkin(torneio.trofeu_skin),
+        nomeDoTorneio: torneio.nome,
+        nomeDaEquipe: equipe.nome,
+      },
+    ]
+  })
 }

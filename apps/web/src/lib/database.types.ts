@@ -653,7 +653,29 @@ export type Database = {
           team_id?: string
           tournament_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'trofeus_player_id_fkey'
+            columns: ['player_id']
+            isOneToOne: false
+            referencedRelation: 'players'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'trofeus_team_id_tournament_id_fkey'
+            columns: ['team_id', 'tournament_id']
+            isOneToOne: false
+            referencedRelation: 'teams'
+            referencedColumns: ['id', 'tournament_id']
+          },
+          {
+            foreignKeyName: 'trofeus_tournament_id_fkey'
+            columns: ['tournament_id']
+            isOneToOne: false
+            referencedRelation: 'tournaments'
+            referencedColumns: ['id']
+          },
+        ]
       }
       user_roles: {
         Row: {

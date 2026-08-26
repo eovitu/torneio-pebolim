@@ -125,9 +125,9 @@ export const RULES: readonly RuleSection[] = [
     title: 'Pódio e troféus',
     items: [
       'A equipe campeã recebe o troféu de ouro; a vice-campeã, o de prata.',
-      'A vencedora da disputa de 3º lugar recebe o troféu de bronze.',
+      'A vencedora da disputa de 3º lugar recebe o troféu de bronze na hora, sem esperar a final.',
       'Da 4ª colocação em diante não há premiação — inclusive para quem perde a disputa de 3º lugar.',
-      'O troféu aparece no perfil de cada jogador da equipe, com o nome do torneio.',
+      'O troféu aparece na página da equipe e no perfil de cada jogador dela, com o nome do torneio.',
     ],
   },
   {
