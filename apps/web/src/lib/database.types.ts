@@ -722,6 +722,10 @@ export type Database = {
         Returns: Database['public']['Tables']['tournaments']['Row']
       }
       excluir_partida: { Args: { p_match_id: string }; Returns: undefined }
+      reabrir_fase: {
+        Args: { p_phase_id: string }
+        Returns: Database['public']['Tables']['phases']['Row']
+      }
       gerar_mata_mata: {
         Args: { p_phase_id: string; p_team_ids?: string[] | null }
         Returns: number

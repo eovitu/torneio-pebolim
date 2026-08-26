@@ -63,6 +63,7 @@ Resumo do que o domínio garante:
 | Vitória / empate / derrota | 3 / 1 / 0 pontos |
 | Empate no mata-mata | Gol de ouro, cronômetro progressivo, sem limite |
 | Desempate na tabela | Pontos, saldo de gols, confronto direto |
+| Fim da fase de grupos | Automático: a última partida encerrada fecha a fase e monta a chave |
 | Corte para o mata-mata | As N melhores, N = maior potência de 2 ≤ número de equipes |
 | Semeadura da chave | 1º × último, 2º × penúltimo |
 | Disputa de 3º lugar | Entre os perdedores da semifinal, quando ela existe |

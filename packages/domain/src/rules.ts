@@ -103,7 +103,7 @@ export const RULES: readonly RuleSection[] = [
     id: 'chaveamento',
     title: 'Chaveamento do mata-mata',
     items: [
-      'Encerrada a fase de grupos, a chave do mata-mata é gerada automaticamente pela classificação.',
+      'Quando a última partida da fase de grupos é encerrada, a fase se fecha sozinha e a chave do mata-mata é montada na hora, pela classificação.',
       'Entram as melhores colocadas, em número igual à maior potência de 2 que caiba no torneio: 2, 4, 8, 16 ou 32.',
       'Quem fica fora desse corte está eliminado — sem chave e sem jogo de consolação.',
       'O emparelhamento é por semeadura: o melhor colocado enfrenta o pior, o segundo enfrenta o penúltimo, e assim por diante.',

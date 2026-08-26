@@ -1213,6 +1213,14 @@ export default function TorneioAdmin() {
                     </Badge>
                   </TituloSecao>
 
+                  {f.kind === 'GROUP' && !encerrada && daFase.length > 0 && (
+                    <Texto $pequeno $mudo>
+                      Não precisa encerrar esta fase na mão: quando a última partida dela for
+                      encerrada, ela se fecha sozinha e o chaveamento do mata-mata é montado na
+                      hora, pela classificação.
+                    </Texto>
+                  )}
+
                   {f.kind === 'GROUP' && !encerrada && daFase.length === 0 && (
                     <Botao
                       type="button"
@@ -1423,6 +1431,13 @@ export default function TorneioAdmin() {
                         Excluir fase
                       </Botao>
                     )}
+                    {/*
+                      Fase de grupos se fecha sozinha quando a última partida
+                      dela é encerrada, e o mata-mata nasce junto. O botão fica
+                      como saída para o caso em que o admin quer fechar antes —
+                      todas as partidas já encerradas, mas a promoção pulada por
+                      corte ambíguo, por exemplo.
+                    */}
                     {!encerrada && daFase.length > 0 && (
                       <Botao
                         type="button"
@@ -1436,6 +1451,22 @@ export default function TorneioAdmin() {
                         }
                       >
                         Encerrar {f.nome}
+                      </Botao>
+                    )}
+                    {encerrada && (
+                      <Botao
+                        type="button"
+                        $variante="fantasma"
+                        disabled={ocupado}
+                        onClick={() =>
+                          void executar(
+                            () => supabase.rpc('reabrir_fase', { p_phase_id: f.id }),
+                            `${f.nome} reaberta. A chave gerada em seguida foi desfeita.`,
+                          )
+                        }
+                      >
+                        <Undo2 size={16} aria-hidden="true" />
+                        Reabrir {f.nome}
                       </Botao>
                     )}
                   </Acoes>
