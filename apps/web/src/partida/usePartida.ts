@@ -11,8 +11,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { computeMatchScore } from '@pebolim/domain'
-import type { MatchEvent, MatchScore } from '@pebolim/domain'
+import { computeMatchScore, regraEfetiva } from '@pebolim/domain'
+import type { MatchEvent, MatchScore, RegraDeTermino } from '@pebolim/domain'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 import { paraEventoDoDominio } from './adaptadores'
@@ -25,6 +25,12 @@ export interface DadosPartida {
   eventos: MatchEvent[]
   linhasDeEvento: Tables<'match_events'>[]
   placar: MatchScore
+  /**
+   * Como esta partida acaba, já resolvida: a regra dela quando existe, senão a
+   * do torneio. A tela precisa disso para não mostrar contagem regressiva numa
+   * partida que na verdade termina por gols.
+   */
+  termino: RegraDeTermino
 }
 
 export function usePartida(matchId: string) {
@@ -52,10 +58,14 @@ export function usePartida(matchId: string) {
     }
 
     const partida = p.data
-    const { data: equipes, error: erroEquipes } = await supabase
-      .from('teams')
-      .select('*')
-      .in('id', [partida.team_a_id, partida.team_b_id])
+    const [{ data: equipes, error: erroEquipes }, { data: torneio }] = await Promise.all([
+      supabase.from('teams').select('*').in('id', [partida.team_a_id, partida.team_b_id]),
+      supabase
+        .from('tournaments')
+        .select('condicao_termino, gols_para_vencer')
+        .eq('id', partida.tournament_id)
+        .maybeSingle(),
+    ])
 
     if (erroEquipes || equipes === null) {
       setErro(erroEquipes?.message ?? 'Não foi possível carregar as equipes.')
@@ -82,6 +92,14 @@ export function usePartida(matchId: string) {
       eventos,
       linhasDeEvento,
       placar: computeMatchScore(partida.team_a_id, partida.team_b_id, eventos),
+      termino: regraEfetiva(
+        partida.condicao_termino === null
+          ? null
+          : { condicao: partida.condicao_termino, golsParaVencer: partida.gols_para_vencer },
+        torneio === null
+          ? null
+          : { condicao: torneio.condicao_termino, golsParaVencer: torneio.gols_para_vencer },
+      ),
     })
     setErro(null)
     setCarregando(false)

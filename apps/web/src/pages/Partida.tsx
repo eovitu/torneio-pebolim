@@ -19,6 +19,7 @@ import { useParams } from 'react-router-dom'
 import styled, { css } from 'styled-components'
 import {
   MATCH_DURATION_MS,
+  descreverTermino,
   canRegisterGoal,
   displayMs,
   formatClock,
@@ -444,16 +445,26 @@ export default function Partida() {
     )
   }
 
-  const { partida, equipeA, equipeB, escalacao, placar, linhasDeEvento } = dados
+  const { partida, equipeA, equipeB, escalacao, placar, linhasDeEvento, termino } = dados
   const relogio = paraRelogioDoDominio(partida)
   const instante = agora()
   const emOuro = partida.status === 'GOLDEN_GOAL'
-  const tempoEsgotado = partida.status === 'LIVE' && isRegulationOver(relogio, instante)
+  const porGols = termino.condicao === 'GOLS'
+  // Por gols o cronômetro não termina nada: alertar "acabou o tempo" ali seria
+  // mentira, e o juiz encerraria uma partida que ainda está valendo.
+  const tempoEsgotado =
+    !porGols && partida.status === 'LIVE' && isRegulationOver(relogio, instante)
   const tempo = formatClock(displayMs(relogio, partida.status, instante))
   const acabando =
+    !porGols &&
     partida.status === 'LIVE' &&
     !tempoEsgotado &&
     displayMs(relogio, partida.status, instante) <= 15000
+  /** Quanto falta para alguém bater a meta — o "tempo restante" da regra por gols. */
+  const faltamParaAMeta =
+    termino.golsParaVencer === null
+      ? null
+      : termino.golsParaVencer - Math.max(placar.teamA.gf, placar.teamB.gf)
 
   // Espelha is_operador_da_partida do banco. A decisão real é do servidor.
   const souEscalado = escalacao.some((l) => l.jogador.profile_id === user?.id)
@@ -641,6 +652,13 @@ export default function Partida() {
               {tempo}
             </p>
             {!relogioPronto && <Detalhe>sincronizando relógio…</Detalhe>}
+            <Detalhe>
+              {porGols && termino.golsParaVencer !== null
+                ? faltamParaAMeta !== null && faltamParaAMeta > 0
+                  ? `termina com ${termino.golsParaVencer} gols · falta ${faltamParaAMeta}`
+                  : `termina com ${termino.golsParaVencer} gols`
+                : descreverTermino(termino)}
+            </Detalhe>
           </Cronometro>
         </Placar>
 
