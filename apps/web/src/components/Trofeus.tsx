@@ -14,7 +14,7 @@
  */
 
 import styled, { css, keyframes } from 'styled-components'
-import { Award, Medal, Trophy } from 'lucide-react'
+import { Award, Medal, Target, Trophy } from 'lucide-react'
 import { midia } from '../design-system/tokens'
 import { METAL_TROFEU, ROTULO_TROFEU } from '../dados/trofeus'
 import type { PosicaoDeTrofeu, SkinDeTrofeu, TrofeuExibido } from '../dados/trofeus'
@@ -29,21 +29,25 @@ const PALETA: Record<SkinDeTrofeu, Record<PosicaoDeTrofeu, { de: string; para: s
     CAMPEAO: { de: '#f7d774', para: '#c9922a', tinta: '#5b3d05' },
     VICE: { de: '#e3e8ec', para: '#a8b3ba', tinta: '#3f4a51' },
     TERCEIRO: { de: '#e2b48c', para: '#a5673a', tinta: '#4d2a12' },
+    ARTILHEIRO: { de: '#ffd0a3', para: '#e07a26', tinta: '#4d2405' },
   },
   NEON: {
     CAMPEAO: { de: '#ffe259', para: '#ff9a00', tinta: '#4a2500' },
     VICE: { de: '#c9f7ff', para: '#5ec8e0', tinta: '#124450' },
     TERCEIRO: { de: '#ffb7a0', para: '#e0644a', tinta: '#4f180d' },
+    ARTILHEIRO: { de: '#d6b4ff', para: '#8a3ff0', tinta: '#2b0a55' },
   },
   RETRO: {
     CAMPEAO: { de: '#e8c56a', para: '#a97c1e', tinta: '#4a340a' },
     VICE: { de: '#d6d3c9', para: '#9a978d', tinta: '#403e38' },
     TERCEIRO: { de: '#cfa383', para: '#8f5f3c', tinta: '#402512' },
+    ARTILHEIRO: { de: '#cfd9b4', para: '#7d8f4e', tinta: '#2f3a16' },
   },
   BOTECO: {
     CAMPEAO: { de: '#ffd86b', para: '#d4901f', tinta: '#523404' },
     VICE: { de: '#dfe6e0', para: '#9faea3', tinta: '#39463c' },
     TERCEIRO: { de: '#d9a97f', para: '#93613a', tinta: '#3f2814' },
+    ARTILHEIRO: { de: '#ffc9a6', para: '#d4622a', tinta: '#4a1c06' },
   },
 }
 
@@ -51,6 +55,7 @@ const ICONE = {
   CAMPEAO: Trophy,
   VICE: Medal,
   TERCEIRO: Award,
+  ARTILHEIRO: Target,
 } as const
 
 const brilho = keyframes`
@@ -69,9 +74,13 @@ const Cartao = styled.article<{ $de: string; $para: string; $tinta: string; $pos
   color: ${({ $tinta }) => $tinta};
   background: linear-gradient(135deg, ${({ $de }) => $de}, ${({ $para }) => $para});
 
-  /* Só o campeão ganha moldura cheia e sombra: é o degrau mais alto. */
+  /*
+    Moldura cheia para o campeão e para o artilheiro: um é o degrau mais alto,
+    o outro é a única premiação individual do torneio. Vice e bronze ficam com
+    a borda discreta, que é o que os mantém visivelmente abaixo do ouro.
+  */
   ${({ $posicao, $para }) =>
-    $posicao === 'CAMPEAO'
+    $posicao === 'CAMPEAO' || $posicao === 'ARTILHEIRO'
       ? css`
           border: 2px solid ${$para};
           box-shadow: 0 6px 22px -10px ${$para};
@@ -107,8 +116,8 @@ const Icone = styled.div<{ $posicao: PosicaoDeTrofeu }>`
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: ${({ $posicao }) => ($posicao === 'CAMPEAO' ? '48px' : '40px')};
-  height: ${({ $posicao }) => ($posicao === 'CAMPEAO' ? '48px' : '40px')};
+  width: ${({ $posicao }) => ($posicao === 'CAMPEAO' || $posicao === 'ARTILHEIRO' ? '48px' : '40px')};
+  height: ${({ $posicao }) => ($posicao === 'CAMPEAO' || $posicao === 'ARTILHEIRO' ? '48px' : '40px')};
   border-radius: ${({ theme }) => theme.radius.pill};
   background: rgba(255, 255, 255, 0.45);
 `
@@ -154,8 +163,17 @@ const Grade = styled.div`
   }
 `
 
-/** Ouro antes de prata, prata antes de bronze — a estante segue o pódio. */
-const PESO: Record<PosicaoDeTrofeu, number> = { CAMPEAO: 0, VICE: 1, TERCEIRO: 2 }
+/**
+ * Ouro antes de prata, prata antes de bronze — a estante segue o pódio. O
+ * artilheiro vem por último não por valer menos, mas por ser outra categoria:
+ * misturá-lo no meio dos degraus faria parecer um 4º lugar.
+ */
+const PESO: Record<PosicaoDeTrofeu, number> = {
+  CAMPEAO: 0,
+  VICE: 1,
+  TERCEIRO: 2,
+  ARTILHEIRO: 3,
+}
 
 export function Trofeus({ trofeus }: { trofeus: readonly TrofeuExibido[] }) {
   const ordenados = [...trofeus].sort(
@@ -176,7 +194,10 @@ export function Trofeus({ trofeus }: { trofeus: readonly TrofeuExibido[] }) {
             $posicao={t.posicao}
           >
             <Icone $posicao={t.posicao}>
-              <Glifo size={t.posicao === 'CAMPEAO' ? 26 : 21} strokeWidth={2.2} />
+              <Glifo
+                size={t.posicao === 'CAMPEAO' || t.posicao === 'ARTILHEIRO' ? 26 : 21}
+                strokeWidth={2.2}
+              />
             </Icone>
             <Texto>
               <span>

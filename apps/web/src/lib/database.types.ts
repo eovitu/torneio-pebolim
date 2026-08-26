@@ -744,6 +744,14 @@ export type Database = {
         Returns: Database['public']['Tables']['tournaments']['Row']
       }
       excluir_partida: { Args: { p_match_id: string }; Returns: undefined }
+      artilheiros_do_torneio: {
+        Args: { p_tournament_id: string }
+        Returns: { player_id: string; team_id: string; artilharia: number }[]
+      }
+      conceder_trofeu_artilheiro: {
+        Args: { p_tournament_id: string }
+        Returns: number
+      }
       reabrir_fase: {
         Args: { p_phase_id: string }
         Returns: Database['public']['Tables']['phases']['Row']
@@ -914,7 +922,7 @@ export type Database = {
       match_status: 'SCHEDULED' | 'LIVE' | 'PAUSED' | 'GOLDEN_GOAL' | 'FINISHED'
       phase_kind: 'GROUP' | 'KNOCKOUT' | 'DOUBLE_ELIMINATION'
       tournament_status: 'CONFIGURACAO' | 'AGUARDANDO_INICIO' | 'EM_ANDAMENTO' | 'ENCERRADO'
-      trofeu_posicao: 'CAMPEAO' | 'VICE' | 'TERCEIRO'
+      trofeu_posicao: 'CAMPEAO' | 'VICE' | 'TERCEIRO' | 'ARTILHEIRO'
     }
     CompositeTypes: {
       [_ in never]: never

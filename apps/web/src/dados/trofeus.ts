@@ -8,7 +8,15 @@
 
 import { supabase } from '../lib/supabase'
 
-export type PosicaoDeTrofeu = 'CAMPEAO' | 'VICE' | 'TERCEIRO'
+/**
+ * As três primeiras são posições de pódio, decididas por confronto. ARTILHEIRO
+ * não é posição: é um prêmio individual, decidido pela soma do torneio inteiro
+ * — e por isso só sai quando o torneio é encerrado.
+ */
+export type PosicaoDeTrofeu = 'CAMPEAO' | 'VICE' | 'TERCEIRO' | 'ARTILHEIRO'
+
+/** Posições de pódio, na ordem do degrau. Artilheiro não entra: não é degrau. */
+export const PODIO = ['CAMPEAO', 'VICE', 'TERCEIRO'] as const
 
 /** As skins que o administrador pode escolher por torneio. */
 export const SKINS = ['CLASSICO', 'NEON', 'RETRO', 'BOTECO'] as const
@@ -36,12 +44,14 @@ export const ROTULO_TROFEU: Record<PosicaoDeTrofeu, string> = {
   CAMPEAO: 'Campeão',
   VICE: 'Vice-campeão',
   TERCEIRO: '3º lugar',
+  ARTILHEIRO: 'Artilheiro',
 }
 
 export const METAL_TROFEU: Record<PosicaoDeTrofeu, string> = {
   CAMPEAO: 'Ouro',
   VICE: 'Prata',
   TERCEIRO: 'Bronze',
+  ARTILHEIRO: 'Chuteira de ouro',
 }
 
 /** Nome de cada skin como o administrador a vê ao escolher. */
@@ -50,6 +60,22 @@ export const ROTULO_SKIN: Record<SkinDeTrofeu, string> = {
   NEON: 'Neon — saturado e brilhante',
   RETRO: 'Retrô — metais foscos',
   BOTECO: 'Boteco — quente e cru',
+}
+
+/** Ordem da estante: pódio pelo degrau, e o artilheiro por último — outra categoria. */
+const PESO_TROFEU: Record<PosicaoDeTrofeu, number> = {
+  CAMPEAO: 0,
+  VICE: 1,
+  TERCEIRO: 2,
+  ARTILHEIRO: 3,
+}
+
+/**
+ * A conquista mais alta de uma lista, para resumir num distintivo só.
+ * Presume lista não vazia — quem chama já checou.
+ */
+export function melhorTrofeu(lista: readonly TrofeuExibido[]): PosicaoDeTrofeu {
+  return [...lista].sort((a, b) => PESO_TROFEU[a.posicao] - PESO_TROFEU[b.posicao])[0]!.posicao
 }
 
 /**
