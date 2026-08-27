@@ -53,13 +53,10 @@ describe('modal de regras', () => {
     ).toBeInTheDocument()
   })
 
-  it('mantém a primeira regra fixa fora da área que rola, e o resto dentro dela', () => {
+  it('deixa TODAS as seções dentro da área que rola, sem parte fixa', () => {
     const { corpo } = montar()
-    const primeira = RULES[0]!
-    const demais = RULES.slice(1)
 
-    expect(corpo).not.toHaveTextContent(primeira.title)
-    for (const secao of demais) {
+    for (const secao of RULES) {
       expect(corpo).toHaveTextContent(secao.title)
     }
   })

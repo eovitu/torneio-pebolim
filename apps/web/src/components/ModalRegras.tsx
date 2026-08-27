@@ -1,6 +1,11 @@
 /**
  * Modal de leitura das regras oficiais, exigido no cadastro (§17).
  *
+ * TUDO rola: nenhuma seção fica presa fora da área de rolagem. A primeira
+ * regra já ficou fixa no topo, como cabeçalho, e no celular isso comia a
+ * altura útil do modal — sobrava uma fresta para ler o resto, e o texto que
+ * importava ficava espremido. Uma lista só, que rola inteira, resolve.
+ *
  * O botão de confirmar só é liberado depois que a pessoa rola até o fim do
  * texto. O conteúdo vem de `RULES` em @pebolim/domain — a mesma fonte que
  * governa o comportamento do sistema —, então texto exibido e regra aplicada
@@ -51,38 +56,6 @@ const Cabecalho = styled.header`
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: ${({ theme }) => theme.color.muted};
-  }
-`
-
-/**
- * A primeira regra da lista fica fixa no topo, como um cabeçalho, enquanto o
- * resto do conteúdo rola por baixo dela — só ela; as demais seções continuam
- * dentro de `Corpo`, que é quem rola.
- */
-const RegraFixa = styled.section`
-  flex-shrink: 0;
-  padding: ${({ theme }) => theme.space[4]} ${({ theme }) => theme.space[4]} ${({ theme }) =>
-    theme.space[3]};
-  border-bottom: 2px solid ${({ theme }) => theme.color.divider};
-  background: ${({ theme }) => theme.color.neutral[100]};
-
-  h3 {
-    margin: 0 0 ${({ theme }) => theme.space[2]};
-    font-size: 14px;
-  }
-
-  ul {
-    margin: 0;
-    padding-left: ${({ theme }) => theme.space[4]};
-  }
-
-  li {
-    font-size: 14px;
-    line-height: 1.5;
-  }
-
-  li + li {
-    margin-top: ${({ theme }) => theme.space[2]};
   }
 `
 
@@ -162,11 +135,6 @@ interface Props {
 export function ModalRegras({ onCancelar, onAceitar, aviso }: Props) {
   const corpoRef = useRef<HTMLDivElement>(null)
   const [leuTudo, setLeuTudo] = useState(false)
-  // RULES é uma constante do domínio com pelo menos uma seção — garantida em
-  // tempo de compilação por quem a escreve, não em tempo de execução.
-  const primeiraRegra = RULES[0]!
-  const demaisRegras = RULES.slice(1)
-
   const verificarRolagem = useCallback(() => {
     const el = corpoRef.current
     if (el === null) return
@@ -217,17 +185,8 @@ export function ModalRegras({ onCancelar, onAceitar, aviso }: Props) {
           <p>Versão {RULES_VERSION}</p>
         </Cabecalho>
 
-        <RegraFixa>
-          <h3>{primeiraRegra.title}</h3>
-          <ul>
-            {primeiraRegra.items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </RegraFixa>
-
         <Corpo ref={corpoRef} onScroll={verificarRolagem} tabIndex={0} data-testid="regras-corpo">
-          {demaisRegras.map((secao) => (
+          {RULES.map((secao) => (
             <section key={secao.id}>
               <h3>{secao.title}</h3>
               <ul>
