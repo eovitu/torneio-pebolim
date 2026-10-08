@@ -22,7 +22,7 @@ import { descreverErro } from '../../dados/campeonato'
 import { Navegacao } from '../../components/Navegacao'
 import { Bloco, Cartao, Pagina, Rotulo, Texto, TituloSecao } from '../../ui/Superficie'
 import { Botao } from '../../ui/Botao'
-import { Carregando, Erro, Sucesso, Vazio } from '../../ui/Estados'
+import { Aviso, Carregando, Erro, Sucesso, Vazio } from '../../ui/Estados'
 import { Avatar, Badge } from '../../ui/Etiqueta'
 import { Campo, Entrada, ErroCampo, Formulario } from '../../components/Formulario'
 import styled from 'styled-components'
@@ -98,6 +98,7 @@ export default function Usuarios() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [avisoAuditoria, setAvisoAuditoria] = useState<string | null>(null)
 
   const {
     register,
@@ -122,11 +123,15 @@ export default function Usuarios() {
   const criar = handleSubmit(async (campos) => {
     setErro(null)
     setAviso(null)
+    setAvisoAuditoria(null)
 
-    const { data, error } = await supabase.functions.invoke<{ email?: string; erro?: string }>(
-      'admin-criar-usuario',
-      { body: { nome: campos.nome.trim(), email: campos.email.trim(), senha: campos.senha } },
-    )
+    const { data, error } = await supabase.functions.invoke<{
+      email?: string
+      erro?: string
+      avisoAuditoria?: string
+    }>('admin-criar-usuario', {
+      body: { nome: campos.nome.trim(), email: campos.email.trim(), senha: campos.senha },
+    })
 
     if (error) {
       setErro(await descreverErroDaFuncao(error))
@@ -138,6 +143,7 @@ export default function Usuarios() {
     }
 
     setAviso(`Conta criada para ${data?.email ?? campos.email}. Entregue a senha para a pessoa.`)
+    if (data?.avisoAuditoria !== undefined) setAvisoAuditoria(data.avisoAuditoria)
     reset({ nome: '', email: '', senha: SENHA_PADRAO })
     await carregar()
   })
@@ -157,6 +163,7 @@ export default function Usuarios() {
 
         {erro !== null && <Erro>{erro}</Erro>}
         {aviso !== null && <Sucesso>{aviso}</Sucesso>}
+        {avisoAuditoria !== null && <Aviso>{avisoAuditoria}</Aviso>}
 
         <Bloco>
           <TituloSecao>
