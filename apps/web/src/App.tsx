@@ -4,7 +4,6 @@ import { Route, Routes } from 'react-router-dom'
 import { GlobalStyle } from './design-system/GlobalStyle'
 import { theme } from './design-system/theme'
 import { AuthProvider } from './auth/AuthProvider'
-import { PortaoDeRegras } from './components/PortaoDeRegras'
 import { RolagemAoNavegar } from './components/RolagemAoNavegar'
 import { RotaAdmin } from './components/Admin'
 import { Carregando } from './ui/Estados'
@@ -57,64 +56,62 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <AuthProvider>
-        <PortaoDeRegras>
-          <RolagemAoNavegar />
-          <Suspense fallback={<Espera />}>
-            <Routes>
-              <Route path="/" element={<BemVindo />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/login" element={<Entrar />} />
-              <Route path="/register" element={<Cadastro />} />
+        <RolagemAoNavegar />
+        <Suspense fallback={<Espera />}>
+          <Routes>
+            <Route path="/" element={<BemVindo />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/login" element={<Entrar />} />
+            <Route path="/register" element={<Cadastro />} />
 
-              <Route path="/tournaments" element={<Torneios />} />
-              <Route path="/tournaments/:id" element={<Torneio />} />
-              <Route path="/teams" element={<Times />} />
-              <Route path="/teams/:id" element={<Time />} />
-              <Route path="/clubs/:id" element={<Clube />} />
-              <Route path="/matches" element={<Partidas />} />
-              <Route path="/matches/:id" element={<Partida />} />
-              <Route path="/players/:id" element={<Jogador />} />
-              <Route path="/profile" element={<Perfil />} />
-              <Route path="/rules" element={<Regras />} />
+            <Route path="/tournaments" element={<Torneios />} />
+            <Route path="/tournaments/:id" element={<Torneio />} />
+            <Route path="/teams" element={<Times />} />
+            <Route path="/teams/:id" element={<Time />} />
+            <Route path="/clubs/:id" element={<Clube />} />
+            <Route path="/matches" element={<Partidas />} />
+            <Route path="/matches/:id" element={<Partida />} />
+            <Route path="/players/:id" element={<Jogador />} />
+            <Route path="/profile" element={<Perfil />} />
+            <Route path="/rules" element={<Regras />} />
 
-              <Route
-                path="/admin"
-                element={
-                  <RotaAdmin>
-                    <PainelAdmin />
-                  </RotaAdmin>
-                }
-              />
-              <Route
-                path="/admin/tournaments"
-                element={
-                  <RotaAdmin>
-                    <AdminTorneios />
-                  </RotaAdmin>
-                }
-              />
-              <Route
-                path="/admin/tournaments/:id"
-                element={
-                  <RotaAdmin>
-                    <AdminTorneio />
-                  </RotaAdmin>
-                }
-              />
-              <Route
-                path="/admin/users"
-                element={
-                  <RotaAdmin>
-                    <AdminUsuarios />
-                  </RotaAdmin>
-                }
-              />
+            <Route
+              path="/admin"
+              element={
+                <RotaAdmin>
+                  <PainelAdmin />
+                </RotaAdmin>
+              }
+            />
+            <Route
+              path="/admin/tournaments"
+              element={
+                <RotaAdmin>
+                  <AdminTorneios />
+                </RotaAdmin>
+              }
+            />
+            <Route
+              path="/admin/tournaments/:id"
+              element={
+                <RotaAdmin>
+                  <AdminTorneio />
+                </RotaAdmin>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RotaAdmin>
+                  <AdminUsuarios />
+                </RotaAdmin>
+              }
+            />
 
-              {/* Catch-all: qualquer endereço desconhecido cai na nossa 404. */}
-              <Route path="*" element={<NaoEncontrada />} />
-            </Routes>
-          </Suspense>
-        </PortaoDeRegras>
+            {/* Catch-all: qualquer endereço desconhecido cai na nossa 404. */}
+            <Route path="*" element={<NaoEncontrada />} />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </ThemeProvider>
   )

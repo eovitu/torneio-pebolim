@@ -64,10 +64,13 @@ describe('rolagem do modal', () => {
   })
 
   it('trava a rolagem do fundo enquanto está aberto', () => {
+    const overflowAnterior = document.body.style.overflow
+    document.body.style.overflow = 'auto'
     const { unmount } = comTema(<ModalRegras onAceitar={vi.fn()} />)
     expect(document.body.style.overflow).toBe('hidden')
     unmount()
-    expect(document.body.style.overflow).not.toBe('hidden')
+    expect(document.body.style.overflow).toBe('auto')
+    document.body.style.overflow = overflowAnterior
   })
 })
 

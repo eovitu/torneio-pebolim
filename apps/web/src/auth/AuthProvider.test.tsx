@@ -1,14 +1,6 @@
 /**
- * Ciclo de vida da confirmação das regras (decisão do proprietário, 20/08/2026).
- *
- * A regra é "uma vez por SESSÃO/LOGIN", e é justamente aí que dá para errar de
- * dois jeitos opostos: mostrar demais (o modal reaparecendo a cada refresh de
- * token, o que irritaria) ou de menos (a confirmação sobrevivendo ao logout, o
- * que furaria a regra).
- *
- * Estes testes exercitam o `AuthProvider` de verdade, dirigindo os eventos do
- * Supabase Auth na mão. O `PortaoDeRegras` tem testes próprios, com o contexto
- * mockado — aqui o que está sob teste é o contexto em si.
+ * A autenticação só registra versões aceitas que vieram do cadastro. Login,
+ * restauração de sessão e renovação de token não representam um novo aceite.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -17,11 +9,11 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { AuthProvider } from './AuthProvider'
 import { useAuth } from './useAuth'
 
-/** Controle dos eventos de autenticação, para dirigi-los no teste. */
 const auth = vi.hoisted(() => ({
   ouvinte: null as ((evento: AuthChangeEvent, s: Session | null) => void) | null,
   sessaoInicial: null as Session | null,
   upserts: [] as unknown[],
+  cadastros: [] as unknown[],
 }))
 
 vi.mock('../lib/supabase', () => ({
@@ -32,6 +24,15 @@ vi.mock('../lib/supabase', () => ({
         auth.ouvinte = cb
         return { data: { subscription: { unsubscribe: () => {} } } }
       },
+      signUp: (dados: unknown) => {
+        auth.cadastros.push(dados)
+        return Promise.resolve({
+          data: { user: { id: 'novo', identities: [{}] }, session: null },
+          error: null,
+        })
+      },
+      signInWithPassword: () => Promise.resolve({ error: null }),
+      signOut: () => Promise.resolve({ error: null }),
     },
     from: () => ({
       upsert: (linha: unknown) => {
@@ -42,28 +43,37 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 
-/** Sessão mínima: só o que o provider realmente lê. */
-function sessaoDe(id: string): Session {
-  return { user: { id, user_metadata: {} } } as Session
+function sessaoDe(id: string, versaoAceita?: string): Session {
+  return {
+    user: {
+      id,
+      user_metadata: versaoAceita === undefined ? {} : { accepted_rules_version: versaoAceita },
+    },
+  } as Session
 }
 
 function Sonda() {
-  const { regrasConfirmadasNestaSessao, confirmarRegras } = useAuth()
+  const { user, cadastrar } = useAuth()
   return (
     <div>
-      <span data-testid="estado">{regrasConfirmadasNestaSessao ? 'confirmado' : 'pendente'}</span>
-      <button type="button" onClick={() => void confirmarRegras('1.0.0')}>
-        confirmar
+      <span data-testid="usuario">{user?.id ?? 'sem sessão'}</span>
+      <button
+        type="button"
+        onClick={() =>
+          void cadastrar({
+            nome: 'Pessoa Nova',
+            email: 'pessoa@example.test',
+            senha: 'senha-segura',
+            versaoRegrasAceita: '1.0.0',
+          })
+        }
+      >
+        cadastrar
       </button>
     </div>
   )
 }
 
-function estado() {
-  return screen.getByTestId('estado').textContent
-}
-
-/** Dispara um evento do Supabase Auth como o cliente real faria. */
 async function emitir(evento: AuthChangeEvent, sessao: Session | null) {
   await act(async () => {
     auth.ouvinte?.(evento, sessao)
@@ -85,97 +95,53 @@ async function montar(sessaoInicial: Session | null) {
 beforeEach(() => {
   auth.ouvinte = null
   auth.upserts = []
-  localStorage.clear()
+  auth.cadastros = []
+  auth.sessaoInicial = null
 })
 
 afterEach(cleanup)
 
-describe('confirmação das regras por sessão', () => {
-  it('começa pendente para quem acabou de entrar', async () => {
+describe('aceite das regras na autenticação', () => {
+  it('restaura uma sessão sem metadata de aceite sem gravar aceite novo', async () => {
     await montar(sessaoDe('u1'))
-    expect(estado()).toBe('pendente')
+
+    expect(screen.getByTestId('usuario')).toHaveTextContent('u1')
+    expect(auth.upserts).toEqual([])
   })
 
-  it('fica confirmada depois do aceite', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
-    expect(estado()).toBe('confirmado')
-  })
+  it('login, troca de conta e renovação sem metadata não criam aceite', async () => {
+    await montar(null)
 
-  it('grava o aceite da versão em rules_acceptance', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
-    expect(auth.upserts).toContainEqual({ user_id: 'u1', accepted_rules_version: '1.0.0' })
-  })
-
-  it('NÃO reaparece a cada renovação de token da mesma conta', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
-    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
-    expect(estado()).toBe('confirmado')
-  })
-
-  it('NÃO reaparece com várias renovações de token seguidas, na mesma sessão', async () => {
-    // Regressão: o celular voltando de segundo plano várias vezes na mesma
-    // sessão dispara TOKEN_REFRESHED em sequência — nenhuma delas é login.
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
-    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
-    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
-    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
-    expect(estado()).toBe('confirmado')
-  })
-
-  it('NÃO reaparece quando o usuário é atualizado (ex.: troca de senha)', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
-    await emitir('USER_UPDATED', sessaoDe('u1'))
-    expect(estado()).toBe('confirmado')
-  })
-
-  it('volta a pendente ao sair', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
-    await emitir('SIGNED_OUT', null)
-    expect(estado()).toBe('pendente')
-  })
-
-  it('volta a pendente no login seguinte', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
-    await emitir('SIGNED_OUT', null)
     await emitir('SIGNED_IN', sessaoDe('u1'))
-    expect(estado()).toBe('pendente')
-  })
-
-  it('volta a pendente quando outra conta entra', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
-    })
+    await emitir('TOKEN_REFRESHED', sessaoDe('u1'))
+    await emitir('SIGNED_OUT', null)
     await emitir('SIGNED_IN', sessaoDe('u2'))
-    expect(estado()).toBe('pendente')
+
+    expect(screen.getByTestId('usuario')).toHaveTextContent('u2')
+    expect(auth.upserts).toEqual([])
   })
 
-  it('não deixa rastro persistente: nada vai para o localStorage', async () => {
-    await montar(sessaoDe('u1'))
-    await act(async () => {
-      screen.getByRole('button', { name: 'confirmar' }).click()
+  it('reconcilia somente a versão previamente aceita no metadata da sessão', async () => {
+    await montar(sessaoDe('u1', '1.0.0'))
+
+    expect(auth.upserts).toContainEqual({
+      user_id: 'u1',
+      accepted_rules_version: '1.0.0',
     })
-    expect(localStorage.length).toBe(0)
+  })
+
+  it('envia ao Supabase a versão lida e aceita explicitamente no cadastro', async () => {
+    await montar(null)
+    await act(async () => {
+      screen.getByRole('button', { name: 'cadastrar' }).click()
+    })
+
+    expect(auth.cadastros).toContainEqual({
+      email: 'pessoa@example.test',
+      password: 'senha-segura',
+      options: {
+        data: { nome: 'Pessoa Nova', accepted_rules_version: '1.0.0' },
+      },
+    })
   })
 })
