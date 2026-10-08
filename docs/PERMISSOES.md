@@ -65,10 +65,15 @@ fazia a inscrição pelo painel de administração não gravar.
 
 `is_participante_do_torneio(uuid, uuid)` é auxiliar interna usada por
 `iniciar_torneio` sob `SECURITY DEFINER`. A migration
-`20261008024238_restringe_rpc_participacao_torneio.sql` revoga `EXECUTE` de
+`20261008100534_restringe_rpc_participacao_torneio.sql` revoga `EXECUTE` de
 `PUBLIC`, `anon` e `authenticated`; o cliente só pode usar a RPC
 `iniciar_torneio`, que deriva a identidade de `auth.uid()` e verifica a
 inscrição antes de qualquer transição.
+
+As migrations `20261008100537_restringe_placar_e_rodizio_privados.sql` e
+`20261008100541_separa_calculo_interno_do_rodizio.sql` fazem o placar herdar as
+permissões do chamador, protegem o roster de torneios privados e separam o
+cálculo interno privilegiado da RPC pública de sugestão.
 
 Na criação administrativa de conta, Auth e PostgreSQL não formam uma transação
 única. Se Auth criar a conta e a gravação de `admin_audit_log` falhar, a Edge

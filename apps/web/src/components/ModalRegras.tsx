@@ -116,9 +116,8 @@ const Acoes = styled.div`
 
 interface Props {
   /**
-   * Quando ausente, o modal é OBRIGATÓRIO: não há botão de cancelar e o Esc
-   * não fecha. É assim que ele aparece na entrada do app — a pessoa precisa
-   * ler e confirmar antes de usar qualquer tela.
+   * Quando presente, permite sair sem aceitar as regras; usado no cadastro e
+   * na consulta manual das regras. Quando ausente, não há botão para fechar.
    */
   onCancelar?: () => void
   /** Recebe a versão efetivamente lida, que é a gravada no aceite. */

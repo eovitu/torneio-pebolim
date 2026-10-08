@@ -113,10 +113,18 @@ de produção e as dependências npm. A suíte SQL usa usuários fictícios em u
 transação revertida; ela cobre políticas representativas, não promete cobertura
 total de RLS nem valida permissões instaladas em produção.
 
-Validação local em **07/10/2026**: `npm run verify` passou (153 testes de
-domínio e 36 web), `npm run build` passou, `npm run test:edge` passou (9),
-`npm run test:db` passou (20 assertions em 1 arquivo, após replay de todas as
-30 migrations) e `npm audit` reportou 0 vulnerabilidades.
+Snapshot de validação local em **07/10/2026**: `npm run verify` passou (153
+testes de domínio e 36 web), `npm run build` passou, `npm run test:edge` passou
+(9), `npm run test:db` passou (20 assertions em 1 arquivo, após replay de todas
+as 30 migrations) e `npm audit` reportou 0 vulnerabilidades.
+
+Validação integrada em **08/10/2026**: `npm ci` instalou 277 pacotes e
+`npm audit` reportou 0 vulnerabilidades; `npm run verify` passou (153 testes de
+domínio e 28 web), `npm run build` passou e `npm run test:edge` passou (9).
+`npm run test:db` passou com 43 testes após replay no CI 37760728672. Os três
+arquivos de migration foram depois renomeados para as versões registradas pelo
+Supabase; seus hashes SHA-256 permaneceram iguais. O replay não foi repetido
+após os renames.
 
 ---
 
