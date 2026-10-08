@@ -60,8 +60,6 @@ vi.mock('../auth/useAuth', () => ({
     session: null,
     user: null,
     carregando: false,
-    regrasConfirmadasNestaSessao: true,
-    confirmarRegras: vi.fn(),
     entrar: vi.fn(),
     cadastrar: vi.fn(),
     sair: vi.fn(),

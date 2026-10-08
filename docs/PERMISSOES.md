@@ -155,19 +155,20 @@ Duas coisas diferentes, de propósito:
 | | Onde vive | Quando |
 | --- | --- | --- |
 | Histórico permanente | tabela `rules_acceptance` | uma linha por (usuário, versão) |
-| Exibição obrigatória | memória do `AuthProvider` | **toda sessão/login** |
+| Aceite obrigatório | formulário de cadastro | depois de ler até o fim e confirmar |
+| Consulta manual | página pública `/rules` | quando a pessoa abre pelo link ou pela rota |
 
-Decisão do proprietário (20/08/2026): como a maioria das contas é criada em
-Admin → Contas e essas pessoas nunca passam pelo cadastro, o modal de regras
-aparece a cada entrada no app. `PortaoDeRegras` bloqueia até a confirmação — sem
-botão de cancelar e sem Esc.
+No cadastro, marcar a opção abre o modal. O aceite só acontece após a leitura
+até o fim e confirmação explícita. Login, restauração de sessão, troca de conta
+e renovação de token não abrem esse modal nem criam aceite por si; o provedor
+somente pode reconciliar uma versão que um cadastro anterior já registrou nos
+metadados. A página `/rules` e seus links continuam disponíveis para consulta
+manual; apenas lê-la não registra aceite.
 
-A confirmação **não** é persistida em `localStorage`: sobreviver ao logout
-furaria a regra. Sair, trocar de conta ou expirar a sessão zera a confirmação.
-
-Ao confirmar, o aceite da versão vigente é gravado em `rules_acceptance` se
-ainda não existir — é assim que contas criadas pelo administrador passam a ter
-registro.
+O cadastro envia a versão aceita em `user_metadata.accepted_rules_version`.
+Quando houver sessão ativa, o provedor reconcilia esse metadata com
+`rules_acceptance` usando gravação idempotente. Sem a versão previamente aceita
+no metadata, a autenticação não grava uma linha nessa tabela.
 
 ## 8. O que a interface NÃO decide
 

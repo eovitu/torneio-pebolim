@@ -20,12 +20,16 @@ function comOverflow(scrollHeight: number, clientHeight: number) {
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(clientHeight)
 }
 
-function montar(props?: { onAceitar?: (v: string) => void; onCancelar?: () => void }) {
+function montar(props?: {
+  onAceitar?: (v: string) => void
+  onCancelar?: () => void
+  aviso?: string
+}) {
   const onAceitar = props?.onAceitar ?? vi.fn()
   const onCancelar = props?.onCancelar ?? vi.fn()
   render(
     <ThemeProvider theme={theme}>
-      <ModalRegras onAceitar={onAceitar} onCancelar={onCancelar} />
+      <ModalRegras onAceitar={onAceitar} onCancelar={onCancelar} aviso={props?.aviso} />
     </ThemeProvider>,
   )
   return {
@@ -53,15 +57,19 @@ describe('modal de regras', () => {
     ).toBeInTheDocument()
   })
 
-  it('mantém a primeira regra fixa fora da área que rola, e o resto dentro dela', () => {
-    const { corpo } = montar()
+  it('deixa título, aviso e todas as seções dentro da área que rola', () => {
+    const aviso = 'Leia a versão completa antes de confirmar.'
+    const { corpo, botaoAceitar } = montar({ aviso })
     const primeira = RULES[0]!
-    const demais = RULES.slice(1)
 
-    expect(corpo).not.toHaveTextContent(primeira.title)
-    for (const secao of demais) {
+    expect(corpo).toHaveTextContent('Regras oficiais')
+    expect(corpo).toHaveTextContent(`Versão ${RULES_VERSION}`)
+    expect(corpo).toHaveTextContent(aviso)
+    expect(corpo).not.toContainElement(botaoAceitar)
+    for (const secao of RULES) {
       expect(corpo).toHaveTextContent(secao.title)
     }
+    expect(corpo).toHaveTextContent(primeira.items[0]!)
   })
 
   it('mantém o aceite bloqueado enquanto o texto não foi lido até o fim', () => {

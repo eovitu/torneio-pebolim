@@ -71,7 +71,7 @@ componentes.
 `Cartoes.tsx` (`CartaoDePartida`, `DestaqueAoVivo`, `CartaoDeTorneio`,
 `CartaoDeTime`, `LinhaDeJogador`, `Numero`, `GradeDeNumeros`),
 `Tabelas.tsx` (`Classificacao`, `Artilharia`), `Navegacao.tsx`,
-`ModalRegras.tsx`, `PortaoDeRegras.tsx`, `Formulario.tsx`, `Admin.tsx`
+`ModalRegras.tsx`, `Formulario.tsx`, `Admin.tsx`
 (`RotaAdmin`).
 
 ## 3. Navegação
@@ -206,10 +206,11 @@ Duas coisas quebraram no primeiro uso real e estão travadas por teste:
 
 | Arquivo | Cobre |
 | --- | --- |
-| `components/ModalRegras.test.tsx` | trava de rolagem do aceite |
-| `auth/AuthProvider.test.tsx` | ciclo de vida da confirmação das regras |
+| `components/ModalRegras.test.tsx` | seções, título, versão e avisos na área rolável; trava de rolagem do aceite |
+| `pages/Cadastro.test.tsx` | bloqueio do cadastro e versão enviada depois da leitura integral |
+| `auth/AuthProvider.test.tsx` | aceite do cadastro preservado; login/refresh sem novo aceite |
+| `App.test.tsx` | rota pública `/rules` sem diálogo obrigatório após login |
 | `ui/Modal.test.tsx` | rolagem, z-index e foco dos modais (regressões reais) |
-| `components/PortaoDeRegras.test.tsx` | obrigatoriedade das regras por sessão |
 | `pages/telas.test.tsx` | fumaça: todas as telas principais montam com banco vazio |
 
 As regras do campeonato continuam cobertas em `packages/domain/test`.
