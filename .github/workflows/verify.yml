@@ -1,0 +1,46 @@
+name: Verify
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.6
+      - run: npm run verify
+      - run: npm run build
+      - run: npm run test:edge
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Start isolated Supabase and replay migrations
+        run: npx --yes supabase@2.120.0 start
+      - name: Replay every migration from zero
+        run: npx --yes supabase@2.120.0 db reset --local
+      - name: Run local pgTAP suite
+        run: npm run test:db
+      - name: Stop local Supabase
+        if: always()
+        run: npx --yes supabase@2.120.0 stop --no-backup

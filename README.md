@@ -86,13 +86,37 @@ Ainda não escritos: `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`,
 
 | Área | Situação |
 | --- | --- |
-| Domínio das regras | pronto e testado (72 testes) |
+| Domínio das regras | coberto por `npm run verify` (a contagem é apresentada pelo Vitest) |
 | Schema, RLS, funções e auditoria | no ar |
 | Auth, perfis e Storage de avatares | no ar |
 | Realtime da partida | no ar |
 | Frontend — navegação, Home, torneios, times, partidas, perfis, admin | no ar |
 | Autoinscrição em torneio | no ar |
 | Aceite obrigatório das regras por sessão | no ar |
+
+## Verificação local de segurança
+
+O projeto local do Supabase usa `project_id` e portas próprios, sem seed. Para
+subir uma stack isolada, aplicar todas as migrations desde zero e executar a
+suíte pgTAP:
+
+```bash
+npx --yes supabase@2.120.0 start
+npx --yes supabase@2.120.0 db reset --local --no-seed
+npm run test:db
+npx --yes supabase@2.120.0 stop --no-backup
+```
+
+`npm run test:edge` executa os testes da Edge Function com Deno 2.9.6 pinado.
+`npm run verify`, `npm run build` e `npm audit` cobrem os workspaces, o build
+de produção e as dependências npm. A suíte SQL usa usuários fictícios em uma
+transação revertida; ela cobre políticas representativas, não promete cobertura
+total de RLS nem valida permissões instaladas em produção.
+
+Validação local em **07/10/2026**: `npm run verify` passou (153 testes de
+domínio e 36 web), `npm run build` passou, `npm run test:edge` passou (9),
+`npm run test:db` passou (20 assertions em 1 arquivo, após replay de todas as
+30 migrations) e `npm audit` reportou 0 vulnerabilidades.
 
 ---
 

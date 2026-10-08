@@ -63,9 +63,33 @@ grant até 20/08/2026, e sem ele a policy nunca chegava a ser consultada: o
 Postgres barra pela falta de privilégio antes de olhar a RLS. Era isso que
 fazia a inscrição pelo painel de administração não gravar.
 
+`is_participante_do_torneio(uuid, uuid)` é auxiliar interna usada por
+`iniciar_torneio` sob `SECURITY DEFINER`. A migration
+`20261008024238_restringe_rpc_participacao_torneio.sql` revoga `EXECUTE` de
+`PUBLIC`, `anon` e `authenticated`; o cliente só pode usar a RPC
+`iniciar_torneio`, que deriva a identidade de `auth.uid()` e verifica a
+inscrição antes de qualquer transição.
+
+Na criação administrativa de conta, Auth e PostgreSQL não formam uma transação
+única. Se Auth criar a conta e a gravação de `admin_audit_log` falhar, a Edge
+Function mantém a conta, retorna sucesso com um aviso explícito e registra um
+warning sem email, senha ou mensagem interna do banco. A tela informa que a
+conta existe e orienta a não repetir a criação; a auditoria fica pendente para
+tratamento administrativo.
+
 `matches` não tem policy de UPDATE para ninguém: status e relógio mudam
 exclusivamente pelas RPCs, com `now()` do servidor. `match_events` é
 append-only para todos — corrigir é inserir um evento novo.
+
+O agregado `placar_partida(uuid)` herda o RLS do chamador. Visitante e jogador
+veem o resultado de partidas públicas; em partida privada recebem `0–0`, pois
+a linha da partida e seus eventos ficam invisíveis. Administradores continuam
+vendo o placar privado. `rodizio_sugerido(uuid)` exige autenticação e, antes de
+calcular ou retornar nomes/equipes, limita a leitura a torneio público ou
+administrador, igual às policies das tabelas. Em jogo privado, `resolver_rodizio`
+valida primeiro o juiz/iniciador ou administrador e usa o cálculo interno só
+para efetivar essa decisão; a RPC de sugestão continua sem retornar o roster ao
+cliente não-admin.
 
 ## 4. Inscrição em torneio
 
@@ -222,3 +246,22 @@ perdedores vencer a final, joga-se uma **segunda final**.
 A regra vive em `packages/domain/src/eliminacaoDupla.ts`, coberta por teste; o
 banco é o espelho dela. A ORDEM do chaveamento é escolha do administrador — o
 sistema não inventa critério de semeadura (§67).
+
+## Verificação de segurança local
+
+`npm run test:edge` usa Deno 2.9.6 pinado para validar autenticação, papel
+administrativo, JSON, criação, sanitização de falhas e auditoria pendente.
+Para o banco, use a stack local isolada de `supabase/config.toml`:
+
+```bash
+npx --yes supabase@2.120.0 start
+npx --yes supabase@2.120.0 db reset --local --no-seed
+npm run test:db
+npx --yes supabase@2.120.0 stop --no-backup
+```
+
+A suíte pgTAP usa UUIDs reservados e faz rollback. São 43 assertions sobre
+casos representativos: leitura pública/privada, placar e rodízio, perfis,
+papéis/auditoria, grants de equipe, escrita direta em partidas e a fronteira
+entre RPCs internas e públicas. Isso não mede 100% da RLS nem comprova o estado
+instalado em produção.
