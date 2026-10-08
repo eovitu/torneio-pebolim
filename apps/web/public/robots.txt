@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://torneio-pebolim.vercel.app/sitemap.xml
