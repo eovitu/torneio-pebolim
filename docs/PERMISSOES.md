@@ -81,6 +81,16 @@ tratamento administrativo.
 exclusivamente pelas RPCs, com `now()` do servidor. `match_events` é
 append-only para todos — corrigir é inserir um evento novo.
 
+O agregado `placar_partida(uuid)` herda o RLS do chamador. Visitante e jogador
+veem o resultado de partidas públicas; em partida privada recebem `0–0`, pois
+a linha da partida e seus eventos ficam invisíveis. Administradores continuam
+vendo o placar privado. `rodizio_sugerido(uuid)` exige autenticação e, antes de
+calcular ou retornar nomes/equipes, limita a leitura a torneio público ou
+administrador, igual às policies das tabelas. Em jogo privado, `resolver_rodizio`
+valida primeiro o juiz/iniciador ou administrador e usa o cálculo interno só
+para efetivar essa decisão; a RPC de sugestão continua sem retornar o roster ao
+cliente não-admin.
+
 ## 4. Inscrição em torneio
 
 Decisão do proprietário (20/08/2026):
@@ -250,8 +260,8 @@ npm run test:db
 npx --yes supabase@2.120.0 stop --no-backup
 ```
 
-A suíte pgTAP usa UUIDs reservados e faz rollback. São 20 assertions sobre
-casos representativos: leitura pública/privada, perfis/papéis/auditoria,
-grants de equipe, escrita direta em partidas e a fronteira entre a RPC interna
-e `iniciar_torneio`. Isso não mede 100% da RLS nem comprova o estado instalado
-em produção.
+A suíte pgTAP usa UUIDs reservados e faz rollback. São 43 assertions sobre
+casos representativos: leitura pública/privada, placar e rodízio, perfis,
+papéis/auditoria, grants de equipe, escrita direta em partidas e a fronteira
+entre RPCs internas e públicas. Isso não mede 100% da RLS nem comprova o estado
+instalado em produção.
